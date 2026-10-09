@@ -6,8 +6,10 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 
 - Palier 1 (Fondations) : réalisé. `flutter analyze` sans erreur, `flutter test` vert (8 tests),
   `flutter build apk --debug` réussi (`app-debug.apk` généré), pool de disque libéré (24 Go).
-- Palier 2 (Exercices) : codé, en attente de commit. `flutter analyze` sans erreur,
-  `flutter test` vert (33 tests : règles RM-01/02/03, unicité, archivage, widgets).
+- Palier 2 (Exercices) : réalisé. `flutter analyze` sans erreur, `flutter test` vert (33 tests).
+- Palier 3 (Programmes) : codé, en attente de commit. `flutter analyze` sans erreur,
+  `flutter test` vert (63 tests : règles, repository transactionnel, duplication préservant
+  l'historique, widgets liste/détail).
 - Un commit Git par fonctionnalité terminée.
 
 ## Décisions
@@ -85,6 +87,20 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
   exercice archivé. Validation utilisateur du plan de palier 2.
 - **Raison** : conserve l'intégrité de l'historique affiché ; l'archivé reste dans les
   graphiques et records mais masqué des sélecteurs.
+
+### 2026-10-09 · Repos par défaut des lignes prévues (palier 3)
+
+- **Question** : quel repos initial pour une ligne prévue ajoutée dans un programme ?
+- **Choix** : lu dans `app_settings.default_rest_seconds` au moment de l'ajout (90 s par défaut).
+- **Raison** : le réglage « Repos par défaut » de la section 7 doit s'appliquer ; pattern déjà en
+  place pour le secteur séance (RM-15).
+
+### 2026-10-09 · Bouton « Démarrer cette séance » (palier 4)
+
+- **Question** : l'écran Détail programme doit afficher au palier 3 un bouton par séance.
+- **Choix** : différé au palier 4 (Séance) qui introduit le mécanisme de démarrage et la copie RM-04.
+- **Raison** : lancer une séance sans le parcours de copie serait incomplet ; le palier 3 valide la
+  persistance et l'édition des programmes.
 
 ## Points ouverts
 
