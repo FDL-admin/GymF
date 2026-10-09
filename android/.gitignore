@@ -1,0 +1,29 @@
+gradle-wrapper.jar
+/.gradle
+/captures/
+/gradlew
+/gradlew.bat
+/local.properties
+GeneratedPluginRegistrant.java
+.cxx/
+
+
+# Secrets et clés de signature
+.env
+*.jks
+*.keystore
+key.properties
+
+# Paquets d'installation copiés à la main
+*.apk
+*.aab
+
+# Système
+.DS_Store
+Thumbs.db
+
+# Remember to never publicly share your keystore.
+# See https://flutter.dev/to/reference-keystore
+key.properties
+**/*.keystore
+**/*.jks
