@@ -124,6 +124,12 @@ ThemeData buildAppTheme() {
       thickness: 1,
       space: 1,
     ),
+    tabBarTheme: const TabBarThemeData(
+      labelColor: AppColors.accentPrimary,
+      unselectedLabelColor: AppColors.textMuted,
+      indicatorColor: AppColors.accentPrimary,
+      dividerColor: AppColors.border,
+    ),
     cardTheme: const CardThemeData(
       color: AppColors.surface,
       elevation: 0,

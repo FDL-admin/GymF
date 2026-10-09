@@ -6,6 +6,8 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 
 - Palier 1 (Fondations) : réalisé. `flutter analyze` sans erreur, `flutter test` vert (8 tests),
   `flutter build apk --debug` réussi (`app-debug.apk` généré), pool de disque libéré (24 Go).
+- Palier 2 (Exercices) : codé, en attente de commit. `flutter analyze` sans erreur,
+  `flutter test` vert (33 tests : règles RM-01/02/03, unicité, archivage, widgets).
 - Un commit Git par fonctionnalité terminée.
 
 ## Décisions
@@ -60,6 +62,29 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
   en mémoire via `sqflite_common_ffi` (dépendance de développement uniquement).
 - **Raison** : le cahier des charges exige un test automatisé prouvant la présence des 4
   programmes et de tous les exercices. Aucune dépendance d'exécution ajoutée.
+
+### 2026-10-09 · Identifiants UUID des exercices personnels (palier 2)
+
+- **Question** : comment générer les UUID v4 des exercices créés par l'utilisateur ?
+- **Choix** : dépendance `uuid` (^4.6.0) ajoutée.
+- **Raison** : bibliothèque Dart pure, aucun accès réseau à l'exécution ; conforme à la
+  convention « IDs UUID v4 (texte) » de la section 5 sans réinventer un générateur fragile.
+
+### 2026-10-09 · Nom de la copie d'un exercice (palier 2)
+
+- **Question** : que faire si « … (copie) » existe déjà, ou si le nom source est trop long ?
+- **Choix** : la copie s'appelle « nom (copie) » ; si c'est déjà pris, suffixe numérique
+  « nom (copie 2) », etc. Si la longueur dépasse 60 caractères, le nom source est tronqué.
+- **Raison** : la colonne `name` est UNIQUE (RM-01) ; ces règles évitent tout conflit et
+  respectent la limite 2–60 caractères.
+
+### 2026-10-09 · Suppression d'un exercice archivé (palier 3)
+
+- **Question** : un exercice archivé peut-il être supprimé plus tard ?
+- **Choix** : **non** — l'archivage est définitif, aucune action de suppression sur un
+  exercice archivé. Validation utilisateur du plan de palier 2.
+- **Raison** : conserve l'intégrité de l'historique affiché ; l'archivé reste dans les
+  graphiques et records mais masqué des sélecteurs.
 
 ## Points ouverts
 

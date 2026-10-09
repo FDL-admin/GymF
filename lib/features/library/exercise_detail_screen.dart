@@ -1,0 +1,170 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../domain/exercise_errors.dart';
+import '../../theme/colors.dart';
+import '../../theme/spacing.dart';
+import 'exercise_form_screen.dart';
+import 'exercise_providers.dart';
+import 'muscle_group_labels.dart';
+
+class ExerciseDetailScreen extends ConsumerStatefulWidget {
+  const ExerciseDetailScreen({super.key, required this.exerciseId});
+
+  final String exerciseId;
+
+  @override
+  ConsumerState<ExerciseDetailScreen> createState() =>
+      _ExerciseDetailScreenState();
+}
+
+class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen> {
+  bool _hasReferences = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReferences();
+  }
+
+  Future<void> _loadReferences() async {
+    final repository = ref.read(exerciseRepositoryProvider);
+    final has = await repository.hasReferences(widget.exerciseId);
+    if (mounted) setState(() => _hasReferences = has);
+  }
+
+  Future<void> _duplicate() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(exerciseRepositoryProvider).duplicate(widget.exerciseId);
+      messenger.showSnackBar(const SnackBar(content: Text('Copie créée.')));
+    } on Exception {
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Impossible de dupliquer l'exercice.")),
+      );
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer l\'exercice ?'),
+        content: Text(
+          _hasReferences
+              ? 'Cet exercice a déjà servi dans des séances : il sera archivé '
+                  'et masqué des sélecteurs.'
+              : 'L\'exercice sera supprimé définitivement.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    try {
+      await ref.read(exerciseRepositoryProvider).delete(widget.exerciseId);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            _hasReferences
+                ? 'Exercice archivé.'
+                : 'Exercice supprimé.',
+          ),
+        ),
+      );
+      navigator.pop();
+    } on ExercisePredefinedException {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Un exercice prédéfini ne peut être supprimé.'),
+        ),
+      );
+    } on ExerciseArchivedException {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Un exercice archivé ne peut être supprimé.'),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final exercise = ref.watch(exerciseProvider(widget.exerciseId)).value;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Exercice')),
+      body: exercise == null
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(24),
+              children: [
+                Text(exercise.name, style: Theme.of(context).textTheme.headlineMedium),
+                const SizedBox(height: 8),
+                Text(
+                  muscleGroupLabel(exercise.muscleGroup),
+                  style: const TextStyle(color: AppColors.textMuted),
+                ),
+                if (exercise.isPredefined) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Exercice prédéfini — non modifiable ni supprimable.',
+                    style: const TextStyle(color: AppColors.textMuted),
+                  ),
+                ],
+                if (exercise.description?.isNotEmpty ?? false) ...[
+                  const SizedBox(height: 16),
+                  Text(exercise.description!),
+                ],
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    if (!exercise.isPredefined)
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ExerciseFormScreen(
+                                  exercise: exercise,
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Text('Modifier'),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                FilledButton.tonal(
+                  onPressed: _duplicate,
+                  child: const Text('Dupliquer'),
+                ),
+                if (!exercise.isPredefined) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.danger,
+                      foregroundColor: AppColors.text,
+                    ),
+                    onPressed: _confirmDelete,
+                    child: const Text('Supprimer'),
+                  ),
+                ],
+              ],
+            ),
+    );
+  }
+}
