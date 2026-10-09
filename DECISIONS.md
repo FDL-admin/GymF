@@ -7,9 +7,11 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 - Palier 1 (Fondations) : réalisé. `flutter analyze` sans erreur, `flutter test` vert (8 tests),
   `flutter build apk --debug` réussi (`app-debug.apk` généré), pool de disque libéré (24 Go).
 - Palier 2 (Exercices) : réalisé. `flutter analyze` sans erreur, `flutter test` vert (33 tests).
-- Palier 3 (Programmes) : codé, en attente de commit. `flutter analyze` sans erreur,
-  `flutter test` vert (63 tests : règles, repository transactionnel, duplication préservant
-  l'historique, widgets liste/détail).
+- Palier 3 (Programmes) : réalisé. `flutter analyze` sans erreur, `flutter test` vert (63 tests :
+  règles, repository transactionnel, duplication préservant l'historique, widgets liste/détail).
+  Commit `dfcd798`.
+- Palier 4 (Séance) : codé, en attente de commit. `flutter analyze` sans erreur,
+  `flutter test` vert (95 tests : RM-04 à RM-13, règles pures, repository, bandeau widget).
 - Un commit Git par fonctionnalité terminée.
 
 ## Décisions
@@ -101,6 +103,36 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 - **Choix** : différé au palier 4 (Séance) qui introduit le mécanisme de démarrage et la copie RM-04.
 - **Raison** : lancer une séance sans le parcours de copie serait incomplet ; le palier 3 valide la
   persistance et l'édition des programmes.
+
+### 2026-10-09 · Démarrage de séance : accès depuis l'Accueil (palier 4)
+
+- **Question** : où placer l'action « Démarrer une séance » (scénario 6.2) ?
+- **Choix** : bouton sur l'écran Accueil, avec une feuille de démarrage « Séance libre » ou
+  « Depuis un programme » (choix programme puis séance type).
+- **Raison** : le scénario nominal part de l'Accueil ; chaque séance type reste démarrable depuis
+  son détail aux paliers ultérieurs sans changement de mécanique.
+
+### 2026-10-09 · Séries créées pour un exercice ajouté en cours (palier 4)
+
+- **Question** : combien de séries à la création quand on ajoute un exercice en séance (RM-05) ?
+- **Choix** : une série vide (mais pré-remplie selon RM-09 si un historique existe) ; l'utilisateur
+  ajoute ensuite des séries avec « ＋ Série ».
+- **Raison** : RM-06 dit « ajouter ou supprimer une série » ; partir d'une seule ligne donne une
+  saisie immédiate sans imposer un nombre arbitraire.
+
+### 2026-10-09 · Pré-remplissage des séries ajoutées en cours (palier 4)
+
+- **Question** : les séries ajoutées pendant la séance sont-elles pré-remplies aussi (RM-09) ?
+- **Choix** : oui — toute nouvelle série suit la règle RM-09 (série k du précédent, sinon
+  dernière série). Validation utilisateur du plan de palier 4.
+- **Raison** : cohérent avec le pré-remplissage présenté à la création de la séance.
+
+### 2026-10-09 · Durée affichée pendant la séance (palier 4)
+
+- **Question** : RM-11 affiche la durée en minutes en fin de séance, mais pendant la séance ?
+- **Choix** : compteur « mm:ss » (ou « h:mm:ss » au-delà d'une heure) pendant la séance ; le
+  récapitulatif garde la durée en minutes. Validation utilisateur du plan de palier 4.
+- **Raison** : un chrono au format temps convient à l'écran en cours ; le cahier ne le précise pas.
 
 ## Points ouverts
 
