@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 
-const int appSchemaVersion = 1;
+const int appSchemaVersion = 2;
 
 const List<String> _v1Tables = [
   '''
@@ -134,11 +134,31 @@ Future<void> createSchemaV1(DatabaseExecutor db) async {
   });
 }
 
+Future<void> _migrateToV2(DatabaseExecutor db) async {
+  await db.execute('ALTER TABLE workout_session ADD COLUMN rest_end_at TEXT');
+  await db.execute(
+    'ALTER TABLE workout_session ADD COLUMN rest_total_seconds INTEGER',
+  );
+  await db.update(
+    'app_settings',
+    {'schema_version': 2},
+    where: 'id = 1',
+  );
+}
+
+Future<void> createSchemaLatest(DatabaseExecutor db) async {
+  await createSchemaV1(db);
+  await _migrateToV2(db);
+}
+
 Future<void> migrate(DatabaseExecutor db, int from, int to) async {
   for (var version = from + 1; version <= to; version++) {
     switch (version) {
       case 1:
         await createSchemaV1(db);
+        break;
+      case 2:
+        await _migrateToV2(db);
         break;
       default:
         throw StateError('Migration inconnue vers la version $version');

@@ -13,6 +13,8 @@ class WorkoutSession {
     required this.startedAt,
     this.endedAt,
     this.note,
+    this.restEndAt,
+    this.restTotalSeconds,
   });
 
   final String id;
@@ -22,8 +24,11 @@ class WorkoutSession {
   final String startedAt;
   final String? endedAt;
   final String? note;
+  final String? restEndAt;
+  final int? restTotalSeconds;
 
   bool get isInProgress => status == WorkoutStatus.inProgress;
+  bool get hasActiveRest => status == WorkoutStatus.inProgress && restEndAt != null;
 
   factory WorkoutSession.fromMap(Map<String, Object?> map) {
     return WorkoutSession(
@@ -34,6 +39,8 @@ class WorkoutSession {
       startedAt: map['started_at'] as String,
       endedAt: map['ended_at'] as String?,
       note: map['note'] as String?,
+      restEndAt: map['rest_end_at'] as String?,
+      restTotalSeconds: map['rest_total_seconds'] as int?,
     );
   }
 
@@ -46,6 +53,8 @@ class WorkoutSession {
       'started_at': startedAt,
       'ended_at': endedAt,
       'note': note,
+      'rest_end_at': restEndAt,
+      'rest_total_seconds': restTotalSeconds,
     };
   }
 }

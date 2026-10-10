@@ -27,7 +27,7 @@ class AppDatabase {
   }
 
   static Future<void> _onCreate(Database db, int version) async {
-    await createSchemaV1(db);
+    await createSchemaLatest(db);
     await seedDatabase(db);
   }
 

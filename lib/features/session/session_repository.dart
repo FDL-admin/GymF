@@ -7,6 +7,7 @@ import '../../data/models/exercise.dart';
 import '../../data/models/workout_exercise.dart';
 import '../../data/models/workout_session.dart';
 import '../../data/models/workout_set.dart';
+import '../../domain/rest_timer.dart';
 import '../../domain/session_rules.dart';
 import 'session_views.dart';
 
@@ -255,6 +256,63 @@ class SessionRepository {
     );
   }
 
+  Future<void> _applyRest(
+    String workoutSessionId,
+    int totalSeconds, {
+    DateTime? at,
+  }) async {
+    final endAt = (at ?? DateTime.now())
+        .toUtc()
+        .add(Duration(seconds: totalSeconds));
+    await _db.update(
+      _Tables.session,
+      {
+        'rest_total_seconds': totalSeconds,
+        'rest_end_at': endAt.toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [workoutSessionId],
+    );
+  }
+
+  Future<void> startRest(String sessionId, int seconds) async {
+    await _applyRest(sessionId, seconds);
+    await _publish();
+  }
+
+  Future<void> adjustRest(String sessionId, int deltaSeconds) async {
+    final session = await _requireOwnSession(sessionId);
+    if (session.restEndAt == null) return;
+    final endAt = RestTimer.shiftEnd(
+      session.restEndAt,
+      deltaSeconds,
+      DateTime.now(),
+    );
+    await _db.update(
+      _Tables.session,
+      {'rest_end_at': endAt.toUtc().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [sessionId],
+    );
+    await _publish();
+  }
+
+  Future<void> restartRest(String sessionId) async {
+    final session = await _requireOwnSession(sessionId);
+    await _applyRest(sessionId, session.restTotalSeconds ?? 90);
+    await _publish();
+  }
+
+  Future<void> clearRest(String sessionId) async {
+    await _db.update(
+      _Tables.session,
+      {'rest_end_at': null, 'rest_total_seconds': null},
+      where: 'id = ?',
+      whereArgs: [sessionId],
+    );
+    await _publish();
+  }
+
   Future<WorkoutSet> validateSet(String setId) async {
     final rows = await _db.query(
       _Tables.set,
@@ -278,6 +336,7 @@ class SessionRepository {
       where: 'id = ?',
       whereArgs: [setId],
     );
+    await _startRestForSet(set.workoutExerciseId);
     await _publish();
     return WorkoutSet(
       id: set.id,
@@ -290,14 +349,55 @@ class SessionRepository {
     );
   }
 
+  Future<void> _startRestForSet(String workoutExerciseId) async {
+    final rows = await _db.query(
+      _Tables.exercise,
+      where: 'id = ?',
+      whereArgs: [workoutExerciseId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return;
+    final workoutExercise = WorkoutExercise.fromMap(rows.single);
+    await _applyRest(
+      workoutExercise.workoutSessionId,
+      workoutExercise.restSeconds,
+    );
+  }
+
   Future<void> unvalidateSet(String setId) async {
+    final rows = await _db.query(
+      _Tables.set,
+      where: 'id = ?',
+      whereArgs: [setId],
+      limit: 1,
+    );
+    if (rows.isEmpty) throw ArgumentError('Série introuvable.');
+    final set = WorkoutSet.fromMap(rows.single);
     await _db.update(
       _Tables.set,
       {'is_done': 0, 'completed_at': null},
       where: 'id = ?',
       whereArgs: [setId],
     );
+    await _clearRestForSet(set.workoutExerciseId);
     await _publish();
+  }
+
+  Future<void> _clearRestForSet(String workoutExerciseId) async {
+    final rows = await _db.query(
+      _Tables.exercise,
+      where: 'id = ?',
+      whereArgs: [workoutExerciseId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return;
+    final workoutExercise = WorkoutExercise.fromMap(rows.single);
+    await _db.update(
+      _Tables.session,
+      {'rest_end_at': null, 'rest_total_seconds': null},
+      where: 'id = ?',
+      whereArgs: [workoutExercise.workoutSessionId],
+    );
   }
 
   Future<WorkoutSet> addSet(String workoutExerciseId) async {
