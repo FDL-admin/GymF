@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/exercise_errors.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
+import '../history/history_providers.dart';
 import 'exercise_form_screen.dart';
 import 'exercise_providers.dart';
 import 'muscle_group_labels.dart';
@@ -102,6 +103,8 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final exercise = ref.watch(exerciseProvider(widget.exerciseId)).value;
+    final record = ref.watch(exerciseRecordProvider(widget.exerciseId)).value ??
+        0;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Exercice')),
@@ -115,6 +118,19 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen> {
                 Text(
                   muscleGroupLabel(exercise.muscleGroup),
                   style: const TextStyle(color: AppColors.textMuted),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Icon(Icons.emoji_events_outlined, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      record > 0
+                          ? 'Record actuel : ${_formatKg(record)} kg'
+                          : 'Record actuel : aucun',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ],
                 ),
                 if (exercise.isPredefined) ...[
                   const SizedBox(height: 8),
@@ -167,4 +183,9 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen> {
             ),
     );
   }
+}
+
+String _formatKg(double value) {
+  if (value == value.roundToDouble()) return value.toInt().toString();
+  return value.toStringAsFixed(1);
 }

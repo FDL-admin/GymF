@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../theme/spacing.dart';
+import '../../widgets/record_badge.dart';
+import '../history/history_providers.dart';
 import 'session_providers.dart';
 import 'session_views.dart';
 
@@ -44,6 +46,9 @@ class _WorkoutSummaryScreenState extends ConsumerState<WorkoutSummaryScreen> {
   @override
   Widget build(BuildContext context) {
     final summary = widget.summary;
+    final recordIds =
+        ref.watch(sessionRecordExercisesProvider(summary.id)).value ??
+            const <String>{};
     final started = DateTime.parse(summary.startedAt).toLocal();
     final dateLabel =
         '${started.day.toString().padLeft(2, '0')}/'
@@ -91,7 +96,13 @@ class _WorkoutSummaryScreenState extends ConsumerState<WorkoutSummaryScreen> {
             for (final exercise in summary.exercises)
               Card(
                 child: ListTile(
-                  title: Text(exercise.name),
+                  title: Row(
+                    children: [
+                      Expanded(child: Text(exercise.name)),
+                      if (recordIds.contains(exercise.exerciseId))
+                        const RecordBadge(),
+                    ],
+                  ),
                   subtitle: Text(
                     '${exercise.doneSets} série'
                     '${exercise.doneSets > 1 ? 's' : ''} · '

@@ -1,6 +1,7 @@
 abstract final class WorkoutStatus {
   static const inProgress = 'in_progress';
   static const completed = 'completed';
+  static const terminated = 'completed';
   static const abandoned = 'abandoned';
 }
 

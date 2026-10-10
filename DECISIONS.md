@@ -10,8 +10,16 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 - Palier 3 (Programmes) : réalisé. `flutter analyze` sans erreur, `flutter test` vert (63 tests :
   règles, repository transactionnel, duplication préservant l'historique, widgets liste/détail).
   Commit `dfcd798`.
-- Palier 4 (Séance) : codé, en attente de commit. `flutter analyze` sans erreur,
-  `flutter test` vert (95 tests : RM-04 à RM-13, règles pures, repository, bandeau widget).
+- Palier 4 (Séance) : réalisé. `flutter analyze` sans erreur, `flutter test` vert (95 tests :
+  RM-04 à RM-13, règles pures, repository, bandeau widget). Commit `a8a3f47`.
+- Palier 5 (Chrono de repos) : réalisé. Migration v2 (`rest_end_at`, `rest_total_seconds`),
+  `RestTimer` pur, service de notifications (`flutter_local_notifications` + `timezone` +
+  `flutter_timezone`), canal « chrono », config Android (desugaring, permissions, receivers,
+  icône). `flutter analyze` sans erreur, `flutter test` vert (101 tests). Commit `04a5e5e`.
+- Palier 6 (Historique et records) : réalisé. `HistoryRepository` (liste, calendrier, détail,
+  suppression, records), RM-14 par exercice (badge récapitulatif + historique, record actuel
+  dans le détail d'exercice), écrans Liste/Calendrier et détail. `flutter analyze` sans erreur,
+  `flutter test` vert (121 tests).
 - Un commit Git par fonctionnalité terminée.
 
 ## Décisions
@@ -133,6 +141,33 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 - **Choix** : compteur « mm:ss » (ou « h:mm:ss » au-delà d'une heure) pendant la séance ; le
   récapitulatif garde la durée en minutes. Validation utilisateur du plan de palier 4.
 - **Raison** : un chrono au format temps convient à l'écran en cours ; le cahier ne le précise pas.
+
+### 2026-10-09 · Dépendances du chrono de repos (palier 5)
+
+- **Question** : comment sonner/vibrer écran verrouillé et programmer l'alerte à une heure exacte ?
+- **Choix** : `flutter_local_notifications` (^19), `timezone` (^0.10) et `flutter_timezone` (^4)
+  ajoutés ; programmation dans le fuseau local via `zonedSchedule` en mode inexact.
+- **Raison** : seuls moyens hors ligne d'émettre une notification sonore/vibrante à échéance ;
+  `timezone` + `flutter_timezone` fournissent le fuseau « heure d'été » correct sans réseau.
+  Desugaring Android activé (`desugar_jdk_libs`) comme exigé par le greffon.
+
+### 2026-10-09 · Séances abandonnées dans l'historique (palier 6)
+
+- **Question** : l'historique et les records incluent-ils les séances abandonnées ?
+- **Choix** : non — seules les séances **terminées** apparaissent et comptent pour RM-14 ;
+  les abandonnées restent en base mais sont masquées.
+- **Raison** : la section 7 décrit l'historique comme « liste des séances terminées » et RM-14
+  compare aux « séances terminées ».
+
+### 2026-10-09 · Portée du badge RECORD (palier 6)
+
+- **Question** : le badge RECORD est-il par série ou par exercice ?
+- **Choix** : **par exercice et par séance** — la charge max de la séance pour un exercice doit
+  être strictement supérieure à toutes ses charges max précédentes, et au moins une séance
+  antérieure avec cet exercice doit exister. Affiché dans le récapitulatif, l'historique, et le
+  détail d'exercice montre le record actuel.
+- **Raison** : texte exact de RM-14 (« sa charge max de la séance »), section 7 (badges RECORD) et
+  section 8 (badge en accent secondaire).
 
 ## Points ouverts
 

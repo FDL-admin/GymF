@@ -87,3 +87,151 @@ class SessionSummary {
   final double volume;
   final List<SessionExerciseSummary> exercises;
 }
+
+class SessionSetDetail {
+  const SessionSetDetail({
+    required this.id,
+    required this.position,
+    this.reps,
+    this.weightKg,
+    this.isDone = false,
+  });
+
+  final String id;
+  final int position;
+  final int? reps;
+  final double? weightKg;
+  final bool isDone;
+
+  factory SessionSetDetail.fromMap(Map<String, Object?> map) {
+    return SessionSetDetail(
+      id: map['id'] as String,
+      position: map['position'] as int,
+      reps: map['reps'] as int? ?? 0,
+      weightKg: (map['weight_kg'] as num?)?.toDouble() ?? 0,
+      isDone: (map['is_done'] as int) == 1,
+    );
+  }
+}
+
+class SessionExerciseDetail {
+  const SessionExerciseDetail({
+    required this.id,
+    required this.exerciseId,
+    required this.name,
+    required this.sets,
+    required this.restSeconds,
+  });
+
+  final String id;
+  final String exerciseId;
+  final String name;
+  final List<SessionSetDetail> sets;
+  final int restSeconds;
+
+  factory SessionExerciseDetail.fromMap(
+    Map<String, Object?> ex,
+    List<SessionSetDetail> sets,
+  ) {
+    return SessionExerciseDetail(
+      id: ex['id'] as String,
+      exerciseId: ex['exercise_id'] as String,
+      name: ex['exercise_name'] as String,
+      sets: sets,
+      restSeconds: (ex['rest_seconds'] as int?) ?? 90,
+    );
+  }
+
+  int get doneSets => sets.where((s) => s.isDone).length;
+  double get volume {
+    var total = 0.0;
+    for (final s in sets) {
+      if (s.isDone) {
+        final r = s.reps ?? 0;
+        final w = s.weightKg ?? 0;
+        total += r * w;
+      }
+    }
+    return total;
+  }
+
+  double get maxLoad {
+    var max = 0.0;
+    for (final s in sets) {
+      if (s.isDone && (s.weightKg ?? 0) > max) {
+        max = s.weightKg ?? 0;
+      }
+    }
+    return max;
+  }
+}
+
+class SessionDetail {
+  const SessionDetail({
+    required this.id,
+    required this.name,
+    required this.programId,
+    required this.startedAt,
+    required this.endedAt,
+    required this.status,
+    required this.note,
+    required this.exercises,
+  });
+
+  final String id;
+  final String name;
+  final String? programId;
+  final String startedAt;
+  final String? endedAt;
+  final String status;
+  final String? note;
+  final List<SessionExerciseDetail> exercises;
+
+  factory SessionDetail.fromSession(
+    WorkoutSession session,
+    List<SessionExerciseDetail> exercises,
+  ) {
+    return SessionDetail(
+      id: session.id,
+      name: session.name,
+      programId: session.programId,
+      startedAt: session.startedAt,
+      endedAt: session.endedAt,
+      status: session.status,
+      note: session.note,
+      exercises: exercises,
+    );
+  }
+
+  int get doneSets {
+    var count = 0;
+    for (final e in exercises) {
+      count += e.doneSets;
+    }
+    return count;
+  }
+
+  double get volume {
+    var total = 0.0;
+    for (final e in exercises) {
+      total += e.volume;
+    }
+    return total;
+  }
+
+  double get maxLoad {
+    var max = 0.0;
+    for (final e in exercises) {
+      if (e.maxLoad > max) max = e.maxLoad;
+    }
+    return max;
+  }
+
+  int get durationMinutes {
+    if (endedAt == null) return 0;
+    final start = DateTime.parse(startedAt);
+    final end = DateTime.parse(endedAt!);
+    final diff = end.difference(start);
+    return diff.inMinutes;
+  }
+}
