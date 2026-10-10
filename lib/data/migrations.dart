@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 
-const int appSchemaVersion = 2;
+const int appSchemaVersion = 3;
 
 const List<String> _v1Tables = [
   '''
@@ -146,9 +146,22 @@ Future<void> _migrateToV2(DatabaseExecutor db) async {
   );
 }
 
+Future<void> _migrateToV3(DatabaseExecutor db) async {
+  await db.execute(
+    'ALTER TABLE app_settings '
+    'ADD COLUMN notifications_enabled INTEGER NOT NULL DEFAULT 0',
+  );
+  await db.update(
+    'app_settings',
+    {'schema_version': 3},
+    where: 'id = 1',
+  );
+}
+
 Future<void> createSchemaLatest(DatabaseExecutor db) async {
   await createSchemaV1(db);
   await _migrateToV2(db);
+  await _migrateToV3(db);
 }
 
 Future<void> migrate(DatabaseExecutor db, int from, int to) async {
@@ -159,6 +172,9 @@ Future<void> migrate(DatabaseExecutor db, int from, int to) async {
         break;
       case 2:
         await _migrateToV2(db);
+        break;
+      case 3:
+        await _migrateToV3(db);
         break;
       default:
         throw StateError('Migration inconnue vers la version $version');

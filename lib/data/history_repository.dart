@@ -90,6 +90,33 @@ class HistoryRepository {
     return days;
   }
 
+  Future<Set<DateTime>> completedDays() async {
+    final rows = await _db.query(
+      'workout_session',
+      columns: ['started_at'],
+      where: 'status = ?',
+      whereArgs: [WorkoutStatus.terminated],
+    );
+    return _localDays(rows);
+  }
+
+  Future<Set<DateTime>> sessionStartedDays() async {
+    final rows = await _db.query(
+      'workout_session',
+      columns: ['started_at'],
+    );
+    return _localDays(rows);
+  }
+
+  Set<DateTime> _localDays(List<Map<String, Object?>> rows) {
+    final days = <DateTime>{};
+    for (final row in rows) {
+      final local = DateTime.parse(row['started_at'] as String).toLocal();
+      days.add(DateTime(local.year, local.month, local.day));
+    }
+    return days;
+  }
+
   Future<SessionDetail> getDetail(String sessionId) async {
     final sessionRows = await _db.query(
       'workout_session',

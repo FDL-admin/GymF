@@ -10,6 +10,7 @@ import '../../domain/session_rules.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
 import '../programs/exercise_picker_dialog.dart';
+import '../settings/settings_providers.dart';
 import 'session_providers.dart';
 import 'session_views.dart';
 import 'workout_summary_screen.dart';
@@ -255,6 +256,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       final summary = await ref
           .read(sessionRepositoryProvider)
           .finish(widget.sessionId);
+      await ref.read(reminderCoordinatorProvider).resynchronize();
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => WorkoutSummaryScreen(summary: summary)),
@@ -287,6 +289,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     );
     if (confirmed != true || !mounted) return;
     await ref.read(sessionRepositoryProvider).abandon(widget.sessionId);
+    await ref.read(reminderCoordinatorProvider).resynchronize();
     if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
   }

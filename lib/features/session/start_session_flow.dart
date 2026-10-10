@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../programs/program_providers.dart';
+import '../settings/settings_providers.dart';
 import 'session_providers.dart';
 import 'session_screen.dart';
 
@@ -22,6 +23,7 @@ class _StartSessionSheet extends ConsumerWidget {
     try {
       final session =
           await ref.read(sessionRepositoryProvider).startFree();
+      await ref.read(reminderCoordinatorProvider).resynchronize();
       if (!navigator.mounted) return;
       navigator.push(
         MaterialPageRoute(
@@ -122,6 +124,7 @@ class _SessionTypePickerScreen extends ConsumerWidget {
     try {
       final session =
           await ref.read(sessionRepositoryProvider).startFromProgram(sessionId);
+      await ref.read(reminderCoordinatorProvider).resynchronize();
       if (!navigator.mounted) return;
       navigator.pushAndRemoveUntil(
         MaterialPageRoute(

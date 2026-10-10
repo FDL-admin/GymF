@@ -169,6 +169,34 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 - **Raison** : texte exact de RM-14 (« sa charge max de la séance »), section 7 (badges RECORD) et
   section 8 (badge en accent secondaire).
 
+### 2026-10-10 · Fenêtre de programmation des rappels (palier 7)
+
+- **Question** : comment garantir les rappels RM-17/RM-18 sans service d'arrière-plan ni réseau ?
+- **Choix** : programmer à l'avance les 14 prochains jours pour les rappels de séance et 45 jours
+  pour l'abonnement, avec des identifiants déterministes (`pre_AAAA-MM-JJ`, `post_AAAA-MM-JJ`,
+  `sub_AAAA-MM-JJ`) et une fonction idempotente `resynchroniserNotifications()` appelée au
+  lancement, à la reprise, et à chaque modification (créneaux, abonnement, début/fin de séance).
+- **Raison** : RM-18 l'impose explicitement ; limitation acceptée par le cahier : si l'application
+  n'est pas ouverte pendant 14 jours, les rappels s'arrêtent.
+
+### 2026-10-10 · Resynchronisation par annulation globale (palier 7)
+
+- **Question** : comment rendre `resynchroniserNotifications()` idempotente avec des identifiants
+  pseudo-aléatoires en entier ?
+- **Choix** : annuler toutes les notifications puis reprogrammer la fenêtre complète ; l'identifiant
+  entier est dérivé de façon stable (FNV-1a) de l'identifiant textuel.
+- **Raison** : garantit l'absence de doublons ou de rappels obsolètes sans suivre l'ensemble des
+  identifiants précédents entre deux lancements. Le chrono de repos, transitoire, est reprogrammé
+  au besoin.
+
+### 2026-10-10 · Accès aux réglages système sans dépendance (palier 7)
+
+- **Question** : RM-20 demande un bouton vers les réglages système ; quelle dépendance utiliser ?
+- **Choix** : aucun paquet ajouté — un `MethodChannel` (`gymf/app_settings`) ouvre
+  `ACTION_APPLICATION_DETAILS_SETTINGS` depuis `MainActivity`.
+- **Raison** : évite une dépendance supplémentaire (le greffon `permission_handler` exigeait une
+  plateforme SDK non disponible) tout en conservant un fonctionnement 100 % hors ligne.
+
 ## Points ouverts
 
 - **Polices exactes** : Rajdhani et Inter retenues (cf. décision ci-dessus).

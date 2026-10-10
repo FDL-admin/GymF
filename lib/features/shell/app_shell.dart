@@ -8,6 +8,7 @@ import '../session/session_screen.dart';
 import '../history/history_screen.dart';
 import '../home/home_screen.dart';
 import '../library/library_screen.dart';
+import '../settings/settings_providers.dart';
 import '../settings/settings_screen.dart';
 import '../tracking/tracking_screen.dart';
 
@@ -18,7 +19,8 @@ class AppShell extends ConsumerStatefulWidget {
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends ConsumerState<AppShell> {
+class _AppShellState extends ConsumerState<AppShell>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
   bool _stalePromptShown = false;
 
@@ -37,6 +39,32 @@ class _AppShellState extends ConsumerState<AppShell> {
     TrackingScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncReminders());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _syncReminders();
+  }
+
+  Future<void> _syncReminders() async {
+    try {
+      await ref.read(reminderCoordinatorProvider).resynchronize();
+    } catch (_) {
+      // Les rappels seront resynchronisés au prochain lancement.
+    }
+  }
 
   void _openSession(BuildContext context, WorkoutSession session) {
     Navigator.of(context).push(
