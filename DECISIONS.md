@@ -197,6 +197,22 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 - **Raison** : évite une dépendance supplémentaire (le greffon `permission_handler` exigeait une
   plateforme SDK non disponible) tout en conservant un fonctionnement 100 % hors ligne.
 
+### 2026-10-10 · Bibliothèque de graphiques (palier 8)
+
+- **Question** : comment tracer la progression (RM-22) hors ligne ?
+- **Choix** : `fl_chart` (^1.2) ajouté ; courbe pour la charge max par séance, barres pour le
+  volume par séance ; période par défaut 3 mois ; axage sobre aux couleurs des tokens.
+- **Raison** : paquet imposé par la section 3, pur Flutter, aucun réseau. Les séries sont
+  calculées en SQL puis filtrées selon la période choisie (`TrackingPeriod.startFrom`).
+
+### 2026-10-10 · Axe des graphiques en index (palier 8)
+
+- **Question** : comment positionner des points dont l'axe est une date ?
+- **Choix** : l'abscisse est l'index du point (0..n-1) ; les dates réelles servent aux libellés et
+  aux infobulles.
+- **Raison** : évite les très grands nombres d'un horodatage en millisecondes dans `fl_chart` et
+  aligne simplement courbe et barres.
+
 ## Points ouverts
 
 - **Polices exactes** : Rajdhani et Inter retenues (cf. décision ci-dessus).
