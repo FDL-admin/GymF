@@ -76,6 +76,7 @@ class ExerciseRepository {
     required String name,
     required String muscleGroup,
     String? description,
+    String? imagePath,
   }) async {
     final normalized = ExerciseRules.normalizeName(name);
     final error = ExerciseRules.validateName(normalized);
@@ -90,6 +91,7 @@ class ExerciseRepository {
       name: normalized,
       muscleGroup: muscleGroup,
       description: description,
+      imagePath: imagePath,
       isPredefined: false,
       isArchived: false,
       createdAt: DateTime.now().toUtc().toIso8601String(),
@@ -104,6 +106,7 @@ class ExerciseRepository {
     required String name,
     required String muscleGroup,
     String? description,
+    String? imagePath,
   }) async {
     final exercise = await getById(id);
     if (exercise.isPredefined) throw const ExercisePredefinedException();
@@ -120,6 +123,7 @@ class ExerciseRepository {
       name: normalized,
       muscleGroup: muscleGroup,
       description: description,
+      imagePath: imagePath,
       isPredefined: false,
       isArchived: exercise.isArchived,
       createdAt: exercise.createdAt,
@@ -129,7 +133,7 @@ class ExerciseRepository {
     return updated;
   }
 
-  Future<Exercise> duplicate(String id) async {
+  Future<Exercise> duplicate(String id, {String? imagePath}) async {
     final source = await getById(id);
     var iteration = 0;
     String copyName;
@@ -141,6 +145,7 @@ class ExerciseRepository {
       name: copyName,
       muscleGroup: source.muscleGroup,
       description: source.description,
+      imagePath: imagePath ?? source.imagePath,
     );
   }
 

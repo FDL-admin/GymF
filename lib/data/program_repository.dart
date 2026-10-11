@@ -95,6 +95,7 @@ class ProgramRepository {
       id: _uuid.v4(),
       name: ProgramRules.normalizeName(draft.name),
       description: draft.description,
+      imagePath: draft.imagePath,
       isPredefined: false,
       createdAt: DateTime.now().toUtc().toIso8601String(),
     );
@@ -118,6 +119,7 @@ class ProgramRepository {
       id: id,
       name: ProgramRules.normalizeName(draft.name),
       description: draft.description,
+      imagePath: draft.imagePath,
       isPredefined: false,
       createdAt: existing.createdAt,
     );
@@ -164,7 +166,7 @@ class ProgramRepository {
     }
   }
 
-  Future<Program> duplicate(String id) async {
+  Future<Program> duplicate(String id, {String? imagePath}) async {
     final source = await getById(id);
     var iteration = 0;
     String copyName;
@@ -183,6 +185,7 @@ class ProgramRepository {
       id: _uuid.v4(),
       name: copyName,
       description: source.description,
+      imagePath: imagePath ?? source.imagePath,
       isPredefined: false,
       createdAt: DateTime.now().toUtc().toIso8601String(),
     );

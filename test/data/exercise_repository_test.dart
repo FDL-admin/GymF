@@ -214,4 +214,56 @@ void main() {
       hasLength(1),
     );
   });
+
+  group('RM-23 — image', () {
+    test('create enregistre le chemin d\'image', () async {
+      final exercise = await repository.create(
+        name: 'Exercice imagé',
+        muscleGroup: 'dos',
+        imagePath: 'images/a.jpg',
+      );
+      final reloaded = await repository.getById(exercise.id);
+      expect(reloaded.imagePath, 'images/a.jpg');
+    });
+
+    test('update remplace ou retire le chemin d\'image', () async {
+      final exercise = await repository.create(
+        name: 'Exercice à retoucher',
+        muscleGroup: 'dos',
+        imagePath: 'images/a.jpg',
+      );
+
+      await repository.update(
+        exercise.id,
+        name: exercise.name,
+        muscleGroup: 'dos',
+        imagePath: 'images/b.jpg',
+      );
+      expect((await repository.getById(exercise.id)).imagePath, 'images/b.jpg');
+
+      await repository.update(
+        exercise.id,
+        name: exercise.name,
+        muscleGroup: 'dos',
+      );
+      expect((await repository.getById(exercise.id)).imagePath, isNull);
+    });
+
+    test('duplicate reprend l\'image ou une copie fournie', () async {
+      final source = await repository.create(
+        name: 'Exercice copié',
+        muscleGroup: 'dos',
+        imagePath: 'images/a.jpg',
+      );
+
+      final inherited = await repository.duplicate(source.id);
+      expect(inherited.imagePath, 'images/a.jpg');
+
+      final copied = await repository.duplicate(
+        source.id,
+        imagePath: 'images/copy.jpg',
+      );
+      expect(copied.imagePath, 'images/copy.jpg');
+    });
+  });
 }

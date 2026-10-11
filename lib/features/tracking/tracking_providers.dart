@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/database_provider.dart';
+import '../../data/models/progress_photo.dart';
+import '../../data/progress_photo_repository.dart';
 import '../../data/tracking_repository.dart';
 import '../../domain/tracking.dart';
 
@@ -54,4 +56,12 @@ final volumeBySessionProvider =
   return ref.watch(trackingRepositoryProvider).volumeBySession(
         since: period.startFrom(DateTime.now()),
       );
+});
+
+final progressPhotoRepositoryProvider = Provider<ProgressPhotoRepository>((ref) {
+  return ProgressPhotoRepository(ref.watch(databaseProvider));
+});
+
+final progressPhotosProvider = StreamProvider<List<ProgressPhoto>>((ref) {
+  return ref.watch(progressPhotoRepositoryProvider).watchAll();
 });

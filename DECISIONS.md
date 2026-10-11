@@ -213,6 +213,28 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 - **Raison** : évite les très grands nombres d'un horodatage en millisecondes dans `fl_chart` et
   aligne simplement courbe et barres.
 
+### 2026-10-10 · Stockage et cycle de vie des images (palier 9)
+
+- **Question** : où stocker les images (RM-23) et comment garantir qu'aucun fichier ne fuit ?
+- **Choix** : `image_picker` (^1.2) ajouté (`maxWidth`/`maxHeight` 1280, `imageQuality` 80) ;
+  les fichiers sont copiés dans un dossier privé `images/` sous le répertoire de documents de
+  l'app, et la base ne stocke qu'un **chemin relatif**. Un `ImageStore` (répertoire de base
+  injectable) expose `saveBytes`/`copy`/`delete`. Les repositories n'écrivent que le chemin ;
+  l'enregistrement/suppression des fichiers se fait côté écran, après validation du formulaire.
+- **Raison** : respecte la section 3 (dépendance et permission caméra imposées) et RM-23
+  (chemin relatif, redimensionnement). Créer le fichier seulement après validation évite les
+  orphelins si l'utilisateur annule ; les fichiers sont supprimés au remplacement, à la
+  suppression de l'élément parent ou à la duplication (copie dédiée).
+
+### 2026-10-10 · Provider ImageStore sans accès disque au démarrage (palier 9)
+
+- **Question** : comment fournir `ImageStore` aux écrans sans casser les tests widget existants ?
+- **Choix** : `ImageStore` résout son répertoire de base **paresseusement** ; le provider le
+  construit sans appel `path_provider`. Les écrans ne touchent au disque qu'en présence d'une
+  image ou lors d'une action utilisateur.
+- **Raison** : les écrans de création sans image ne déclenchent aucun accès disque ; les tests
+  qui n'exercent pas les images n'ont pas à surcharger le provider.
+
 ## Points ouverts
 
 - **Polices exactes** : Rajdhani et Inter retenues (cf. décision ci-dessus).

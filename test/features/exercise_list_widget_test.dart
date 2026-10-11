@@ -24,6 +24,7 @@ class _FakeExerciseRepository implements ExerciseRepository {
     required String name,
     required String muscleGroup,
     String? description,
+    String? imagePath,
   }) async {
     throw const ExerciseNameTakenException();
   }
@@ -117,7 +118,10 @@ void main() {
       matching: find.byType(TextFormField),
     );
     await tester.enterText(nameField.first, 'Squat');
-    await tester.tap(find.widgetWithText(FilledButton, 'Créer'));
+    final createButton = find.widgetWithText(FilledButton, 'Créer');
+    await tester.ensureVisible(createButton);
+    await tester.pumpAndSettle();
+    await tester.tap(createButton);
     await tester.pumpAndSettle();
 
     expect(find.text('Un exercice porte déjà ce nom.'), findsOneWidget);

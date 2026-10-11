@@ -189,4 +189,46 @@ void main() {
     expect(first.name, 'Original (copie)');
     expect(second.name, 'Original (copie 2)');
   });
+
+  group('RM-23 — image', () {
+    test('create et update enregistrent le chemin d\'image', () async {
+      final program = await repository.create(
+        ProgramDraft(
+          name: 'Programme imagé',
+          imagePath: 'images/p.jpg',
+          sessions: [sessionA],
+        ),
+      );
+      expect((await repository.getById(program.id)).imagePath, 'images/p.jpg');
+
+      await repository.update(
+        program.id,
+        ProgramDraft(
+          name: 'Programme imagé',
+          imagePath: 'images/q.jpg',
+          sessions: [sessionA],
+        ),
+      );
+      expect((await repository.getById(program.id)).imagePath, 'images/q.jpg');
+    });
+
+    test('duplicate reprend l\'image ou une copie fournie', () async {
+      final program = await repository.create(
+        ProgramDraft(
+          name: 'Programme source',
+          imagePath: 'images/p.jpg',
+          sessions: [sessionA],
+        ),
+      );
+
+      final inherited = await repository.duplicate(program.id);
+      expect(inherited.imagePath, 'images/p.jpg');
+
+      final copied = await repository.duplicate(
+        program.id,
+        imagePath: 'images/copy.jpg',
+      );
+      expect(copied.imagePath, 'images/copy.jpg');
+    });
+  });
 }

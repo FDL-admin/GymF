@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/image_providers.dart';
 import '../../data/models/exercise.dart';
 import '../../domain/program_drafts.dart';
 import '../../domain/program_errors.dart';
 import '../../domain/program_rules.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
+import '../../widgets/pick_image.dart';
+import '../../widgets/stored_image.dart';
 import 'exercise_picker_dialog.dart';
 import 'program_providers.dart';
 
@@ -74,6 +77,10 @@ class _ProgramFormScreenState extends ConsumerState<ProgramFormScreen> {
   String? _nameTakenError;
   bool _saving = false;
   int _defaultRest = defaultRestSeconds;
+  String? _existingImagePath;
+  Uint8List? _pickedBytes;
+  String _pickedExtension = 'jpg';
+  bool _removeImage = false;
 
   @override
   void initState() {
@@ -99,6 +106,7 @@ class _ProgramFormScreenState extends ConsumerState<ProgramFormScreen> {
       final program = await repository.getById(widget.programId!);
       _nameController.text = program.name;
       _descriptionController.text = program.description ?? '';
+      _existingImagePath = program.imagePath;
       for (final session in await repository.getSessions(program.id)) {
         final draft = _SessionDraft(
           nameController: TextEditingController(text: session.name),
@@ -191,6 +199,25 @@ class _ProgramFormScreenState extends ConsumerState<ProgramFormScreen> {
     });
   }
 
+  Future<void> _pickImage() async {
+    final file = await pickImage(context);
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _pickedBytes = bytes;
+      _pickedExtension = _extensionOf(file.name);
+      _removeImage = false;
+    });
+  }
+
+  void _clearImage() {
+    setState(() {
+      _pickedBytes = null;
+      _removeImage = true;
+    });
+  }
+
   Future<void> _save() async {
     setState(() => _nameTakenError = null);
     if (!(_formKey.currentState?.validate() ?? false)) return;
@@ -230,21 +257,53 @@ class _ProgramFormScreenState extends ConsumerState<ProgramFormScreen> {
     }
 
     setState(() => _saving = true);
+    final store = ref.read(imageStoreProvider);
+    String? imagePath = _existingImagePath;
+    String? createdPath;
+    if (_pickedBytes != null) {
+      try {
+        createdPath = await store.saveBytes(
+          _pickedBytes!,
+          extension: _pickedExtension,
+        );
+        imagePath = createdPath;
+      } on Exception {
+        if (mounted) setState(() => _saving = false);
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Impossible d'enregistrer l'image.")),
+        );
+        return;
+      }
+    } else if (_removeImage) {
+      imagePath = null;
+    }
+    final finalDraft = ProgramDraft(
+      name: draft.name,
+      description: draft.description,
+      imagePath: imagePath,
+      sessions: draft.sessions,
+    );
+
     try {
       final repository = ref.read(programRepositoryProvider);
       if (widget.isEditing) {
-        await repository.update(widget.programId!, draft);
+        await repository.update(widget.programId!, finalDraft);
       } else {
-        await repository.create(draft);
+        await repository.create(finalDraft);
+      }
+      if (createdPath != null || _removeImage) {
+        await store.delete(_existingImagePath);
       }
       if (mounted) navigator.pop();
     } on ProgramNameTakenException {
+      if (createdPath != null) await store.delete(createdPath);
       setState(() {
         _nameTakenError = 'Un programme porte déjà ce nom.';
         _saving = false;
       });
       _formKey.currentState?.validate();
     } on ProgramPredefinedException {
+      if (createdPath != null) await store.delete(createdPath);
       messenger.showSnackBar(
         const SnackBar(
           content: Text('Un programme prédéfini ne peut être modifié.'),
@@ -260,6 +319,50 @@ class _ProgramFormScreenState extends ConsumerState<ProgramFormScreen> {
     return int.tryParse(trimmed);
   }
 
+  Widget _buildImageSection() {
+    final hasImage =
+        _pickedBytes != null || (!_removeImage && _existingImagePath != null);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_pickedBytes != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.memory(_pickedBytes!, height: 200, fit: BoxFit.cover),
+          )
+        else if (!_removeImage && _existingImagePath != null)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: StoredImage(relativePath: _existingImagePath!, height: 200),
+          )
+        else
+          Container(
+            height: 120,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceElevated,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: Icon(Icons.image_outlined, color: AppColors.textMuted),
+            ),
+          ),
+        const SizedBox(height: AppSpacing.sm),
+        OutlinedButton.icon(
+          onPressed: _saving ? null : _pickImage,
+          icon: const Icon(Icons.photo_camera_outlined),
+          label: Text(hasImage ? 'Remplacer la photo' : 'Ajouter une photo'),
+        ),
+        if (hasImage) ...[
+          const SizedBox(height: AppSpacing.xs),
+          TextButton(
+            onPressed: _saving ? null : _clearImage,
+            child: const Text("Supprimer l'image"),
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -273,6 +376,8 @@ class _ProgramFormScreenState extends ConsumerState<ProgramFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
+            _buildImageSection(),
+            const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _nameController,
               maxLength: programNameMaxLength,
@@ -454,4 +559,9 @@ class _PlannedRow extends StatelessWidget {
       ),
     );
   }
+}
+String _extensionOf(String fileName) {
+  final dot = fileName.lastIndexOf('.');
+  if (dot == -1 || dot == fileName.length - 1) return 'jpg';
+  return fileName.substring(dot + 1).toLowerCase();
 }

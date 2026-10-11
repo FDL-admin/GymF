@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gymf/data/models/progress_photo.dart';
 import 'package:gymf/data/tracking_repository.dart';
 import 'package:gymf/features/tracking/tracking_providers.dart';
 import 'package:gymf/features/tracking/tracking_screen.dart';
@@ -24,6 +25,7 @@ Future<void> _pump(
   List<TrackedExercise> exercises = const [],
   List<ProgressPoint> progress = const [],
   List<VolumePoint> volume = const [],
+  List<ProgressPhoto> photos = const [],
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -32,6 +34,7 @@ Future<void> _pump(
         weightProgressionProvider
             .overrideWith((ref, _) async => progress),
         volumeBySessionProvider.overrideWith((ref) async => volume),
+        progressPhotosProvider.overrideWith((ref) => Stream.value(photos)),
       ],
       child: const MaterialApp(home: Scaffold(body: TrackingScreen())),
     ),
@@ -46,10 +49,7 @@ void main() {
     await tester.tap(find.text('Photos'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Les photos de progression arriveront bientôt.'),
-      findsOneWidget,
-    );
+    expect(find.text('Aucune photo pour le moment.'), findsOneWidget);
   });
 
   testWidgets('moins de deux points : message dédié', (tester) async {

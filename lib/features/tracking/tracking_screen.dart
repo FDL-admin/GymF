@@ -6,7 +6,7 @@ import '../../data/tracking_repository.dart';
 import '../../domain/tracking.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
-import '../../widgets/empty_state.dart';
+import 'progress_photos_view.dart';
 import 'tracking_providers.dart';
 
 class TrackingScreen extends ConsumerStatefulWidget {
@@ -44,21 +44,9 @@ class _TrackingScreenState extends ConsumerState<TrackingScreen> {
           ),
         ),
         Expanded(
-          child: _showPhotos ? const _PhotosPlaceholder() : const _GraphsView(),
+          child: _showPhotos ? const ProgressPhotosView() : const _GraphsView(),
         ),
       ],
-    );
-  }
-}
-
-class _PhotosPlaceholder extends StatelessWidget {
-  const _PhotosPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const EmptyState(
-      icon: Icons.photo_library_outlined,
-      message: 'Les photos de progression arriveront bientôt.',
     );
   }
 }

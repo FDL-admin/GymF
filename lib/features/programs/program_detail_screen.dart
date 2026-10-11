@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/image_providers.dart';
 import '../../data/program_views.dart';
 import '../../domain/program_errors.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
+import '../../widgets/stored_image.dart';
 import 'program_form_screen.dart';
 import 'program_providers.dart';
 
@@ -25,8 +27,19 @@ class ProgramDetailScreen extends ConsumerWidget {
           : ListView(
               padding: const EdgeInsets.all(24),
               children: [
+                if (program!.imagePath != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: StoredImage(
+                      relativePath: program.imagePath!,
+                      width: double.infinity,
+                      height: 220,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
                 Text(
-                  program!.name,
+                  program.name,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 if (program.description?.isNotEmpty ?? false) ...[
@@ -66,9 +79,18 @@ class ProgramDetailScreen extends ConsumerWidget {
                 FilledButton.tonal(
                   onPressed: () async {
                     final messenger = ScaffoldMessenger.of(context);
+                    final store = ref.read(imageStoreProvider);
+                    String? copyPath;
+                    if (program.imagePath != null) {
+                      try {
+                        copyPath = await store.copy(program.imagePath!);
+                      } on Exception {
+                        copyPath = null;
+                      }
+                    }
                     await ref
                         .read(programRepositoryProvider)
-                        .duplicate(program.id);
+                        .duplicate(program.id, imagePath: copyPath);
                     messenger.showSnackBar(
                       const SnackBar(content: Text('Copie créée.')),
                     );
@@ -117,7 +139,9 @@ class ProgramDetailScreen extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
+      final program = await ref.read(programRepositoryProvider).getById(programId);
       await ref.read(programRepositoryProvider).delete(programId);
+      await ref.read(imageStoreProvider).delete(program.imagePath);
       messenger.showSnackBar(
         const SnackBar(content: Text('Programme supprimé.')),
       );

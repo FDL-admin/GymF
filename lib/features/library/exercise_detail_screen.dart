@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/image_providers.dart';
 import '../../domain/exercise_errors.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
+import '../../widgets/stored_image.dart';
 import '../history/history_providers.dart';
 import 'exercise_form_screen.dart';
 import 'exercise_providers.dart';
@@ -36,10 +38,24 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen> {
 
   Future<void> _duplicate() async {
     final messenger = ScaffoldMessenger.of(context);
+    final source = ref.read(exerciseProvider(widget.exerciseId)).value;
+    String? copyPath;
+    if (source?.imagePath != null) {
+      try {
+        copyPath = await ref.read(imageStoreProvider).copy(source!.imagePath!);
+      } on Exception {
+        copyPath = null;
+      }
+    }
     try {
-      await ref.read(exerciseRepositoryProvider).duplicate(widget.exerciseId);
+      await ref
+          .read(exerciseRepositoryProvider)
+          .duplicate(widget.exerciseId, imagePath: copyPath);
       messenger.showSnackBar(const SnackBar(content: Text('Copie créée.')));
     } on Exception {
+      if (copyPath != null) {
+        await ref.read(imageStoreProvider).delete(copyPath);
+      }
       messenger.showSnackBar(
         const SnackBar(content: Text("Impossible de dupliquer l'exercice.")),
       );
@@ -74,7 +90,11 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
-      await ref.read(exerciseRepositoryProvider).delete(widget.exerciseId);
+      final deleted =
+          await ref.read(exerciseRepositoryProvider).delete(widget.exerciseId);
+      if (!_hasReferences) {
+        await ref.read(imageStoreProvider).delete(deleted.imagePath);
+      }
       messenger.showSnackBar(
         SnackBar(
           content: Text(
@@ -113,6 +133,17 @@ class _ExerciseDetailScreenState extends ConsumerState<ExerciseDetailScreen> {
           : ListView(
               padding: const EdgeInsets.all(24),
               children: [
+                if (exercise.imagePath != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: StoredImage(
+                      relativePath: exercise.imagePath!,
+                      width: double.infinity,
+                      height: 220,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Text(exercise.name, style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 8),
                 Text(
