@@ -284,6 +284,47 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 - **Raison** : la section 8 l'exige ; les autres écrans reposent sur des cartes métier non
   considérées comme des « panneaux » du skin. Décision d'application sur les panneaux types.
 
+### 2026-10-12 · Rafraîchissement de l'historique après une séance
+
+- **Question** : le parcours de test sur appareil (Pixel 6 Pro) a révélé que l'onglet Historique
+  restait vide après une séance terminée. Pourquoi ?
+- **Choix** : `SessionRepository` émet un signal `durableChanges` sur les événements de cycle de
+  vie (démarrage, fin, abandon, note) ; `sessionRepositoryProvider` s'y abonne et appelle
+  `dataRevisionProvider.bump()`. L'historique et le suivi, qui dépendent de `dataRevision`
+  (comme après un import), se recalculent alors.
+- **Raison** : `AppShell` utilise un `IndexedStack` qui monte les cinq onglets au lancement ; le
+  feed d'historique était donc résolu « vide » avant la séance et n'était jamais invalidé
+  (seul l'écran Réglages appelait `bump()`). Les mutations de séance ne passant pas par le
+  repository Riverpod, l'invalidation manquait. Un test de régression
+  (`test/features/session_revision_test.dart`) verrouille le comportement.
+
+### 2026-10-12 · Écrans de détail figés après édition
+
+- **Question** : après modification d'un exercice ou d'un programme, l'écran de détail continuait
+  d'afficher les anciennes valeurs.
+- **Choix** : `ExerciseFormScreen` invalide `exerciseProvider(id)` et `ProgramFormScreen` invalide
+  `programDetailProvider(id)` après une mise à jour réussie, avant de fermer l'écran. Le bouton
+  « Modifier » d'un programme prédéfini est masqué (déjà non supprimable).
+- **Raison** : `.*Provider(id)` est un `autoDispose.family` mis en cache tant que l'écran de
+  détail l'observe ; aucune écriture ne le rafraîchissait. Tests de régression :
+  `test/features/exercise_edit_refresh_widget_test.dart` et
+  `test/features/programs_widget_test.dart` (visibilité du bouton).
+
+### 2026-10-12 · Chrono de repos RM-15 (interface et notifications)
+
+- **Question** : le domaine (`RestTimer`), le schéma (`rest_end_at`, `rest_total_seconds`), le
+  repository et les notifications « chrono » existaient déjà, mais l'écran de séance n'exposait
+  aucun chrono et n'appelait jamais la programmation de notification.
+- **Choix** : panneau « Chrono de repos » dans `SessionScreen` affiché quand `hasActiveRest`
+  (compte à rebours, `−15 s` / `+15 s` / `Passer` / `Redémarrer`, barre de progression). Le
+  démarrage/dé-validation de série resynchronise le chrono via `ChronoNotifier.scheduleEnd` /
+  `cancel` ; terminer ou abandonner annule le chrono et efface `rest_end_at`. `cancelAll()`
+  n'annule plus que les rappels en attente autres que le chrono (id 1001), afin que le resync des
+  rappels ne supprime pas un chrono actif. Code mort (`showChronoNow`) supprimé.
+- **Raison** : RM-15 (durée = `rest_seconds`, alerte à zéro même au premier plan) et la section 3
+  (canal « chrono ») l'exigent. Tests : `test/data/session_repository_test.dart` (groupe RM-15) et
+  `test/features/session_rest_widget_test.dart`.
+
 ## Points ouverts
 
 - **Built-in Kotlin** : `flutter build` émet un avertissement sur `flutter_timezone`, qui applique

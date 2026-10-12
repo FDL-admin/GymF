@@ -59,3 +59,19 @@ flutter build apk --debug       # build de test
 
 Travail par paliers dans l'ordre (section 10). Ne commencer un palier que lorsque les critères
 d'acceptation du précédent sont remplis et testés. Voir `DECISIONS.md` pour l'état d'avancement.
+
+## Reprise de session
+
+Dernière session (2026-10-12) : corrections de bugs et achevèvement du chrono de repos RM-15.
+
+- **Fait** : écrans de détail rafraîchis après édition (exercice et programme) ; bouton
+  « Modifier » masqué pour un programme prédéfini ; `cancelAll()` préserve le chrono de repos ;
+  terminer/abandonner effacent le repos ; panneau « Chrono de repos » dans l'écran de séance
+  (RM-15) ; test d'intégration E2E `integration_test/app_flow_test.dart`.
+- **Vérifié** : `flutter analyze` sans erreur ; `flutter test` **210 tests verts** ; parcours E2E
+  vert sur le Pixel 6 Pro.
+- **Prochaine étape (au « GO »)** : poursuivre les **tests** — parcours manuel complet sur
+  appareil, chrono de repos réel (alerte son/vibration à zéro), notifications de rappel,
+  export/import, fluidité et cohérence de l'ensemble.
+- **Consigne** : au signal « GO », reprendre directement à cette étape de tests sans rejouer le
+  plan ni le contexte ; relancer d'abord `flutter analyze` et `flutter test` pour confirmer l'état.
