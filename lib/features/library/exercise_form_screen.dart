@@ -134,6 +134,9 @@ class _ExerciseFormScreenState extends ConsumerState<ExerciseFormScreen> {
       if (createdPath != null || _removeImage) {
         await store.delete(previousPath);
       }
+      if (widget.isEditing) {
+        ref.invalidate(exerciseProvider(widget.exercise!.id));
+      }
       if (mounted) navigator.pop();
     } on ExerciseNameTakenException {
       if (createdPath != null) await store.delete(createdPath);

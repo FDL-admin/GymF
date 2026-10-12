@@ -294,6 +294,9 @@ class _ProgramFormScreenState extends ConsumerState<ProgramFormScreen> {
       if (createdPath != null || _removeImage) {
         await store.delete(_existingImagePath);
       }
+      if (widget.isEditing) {
+        ref.invalidate(programDetailProvider(widget.programId!));
+      }
       if (mounted) navigator.pop();
     } on ProgramNameTakenException {
       if (createdPath != null) await store.delete(createdPath);

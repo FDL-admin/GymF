@@ -8,16 +8,17 @@ import 'package:gymf/data/program_views.dart';
 import 'package:gymf/features/programs/program_providers.dart';
 import 'package:gymf/features/programs/programs_screen.dart';
 
-Program _program(String id, String name) => Program(
+Program _program(String id, String name, {bool isPredefined = true}) =>
+    Program(
       id: id,
       name: name,
       description: 'Description $name',
-      isPredefined: true,
+      isPredefined: isPredefined,
       createdAt: '2026-10-09T00:00:00.000Z',
     );
 
-ProgramDetail _detail() => ProgramDetail(
-      program: _program('p1', 'Full Body (A/B)'),
+ProgramDetail _detail({bool isPredefined = true}) => ProgramDetail(
+      program: _program('p1', 'Full Body (A/B)', isPredefined: isPredefined),
       sessions: [
         ProgramSessionView(
           session: const ProgramSession(
@@ -89,6 +90,34 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Supprimer'), findsNothing);
+  });
+
+  testWidgets('un programme prédéfini n\'a pas de bouton modifier',
+      (tester) async {
+    await _openLibrary(
+      tester,
+      programs: [_program('p1', 'Full Body (A/B)')],
+      detail: _detail(),
+    );
+
+    await tester.tap(find.text('Full Body (A/B)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Modifier'), findsNothing);
+  });
+
+  testWidgets('un programme personnalisé propose le bouton modifier',
+      (tester) async {
+    await _openLibrary(
+      tester,
+      programs: [_program('p1', 'Full Body (A/B)', isPredefined: false)],
+      detail: _detail(isPredefined: false),
+    );
+
+    await tester.tap(find.text('Full Body (A/B)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Modifier'), findsOneWidget);
   });
 
   testWidgets('la recherche filtre les programmes', (tester) async {

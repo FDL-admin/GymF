@@ -57,25 +57,27 @@ class ProgramDetailScreen extends ConsumerWidget {
                 for (final session in detail.sessions)
                   _SessionCard(session: session),
                 const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => ProgramFormScreen(
-                                programId: program.id,
+                if (!program.isPredefined) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => ProgramFormScreen(
+                                  programId: program.id,
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                        child: const Text('Modifier'),
+                            );
+                          },
+                          child: const Text('Modifier'),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
                 FilledButton.tonal(
                   onPressed: () async {
                     final messenger = ScaffoldMessenger.of(context);
