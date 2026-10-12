@@ -20,6 +20,16 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
   suppression, records), RM-14 par exercice (badge récapitulatif + historique, record actuel
   dans le détail d'exercice), écrans Liste/Calendrier et détail. `flutter analyze` sans erreur,
   `flutter test` vert (121 tests).
+- Palier 7 (Planning, rappels, série, abonnement) : réalisé. RM-16 à RM-21, migration v3,
+  `resynchroniserNotifications()`, épingles déterministes, écran Réglages, série de jours
+  (RM-21). Commit `3eb4002`.
+- Palier 8 (Graphiques) : réalisé. RM-22 avec `fl_chart`, période 1/3/6 mois/Tout, état « Pas
+  encore assez de données ». Commit `c371dab`.
+- Palier 9 (Images et photos) : réalisé. RM-23 avec `image_picker`, `ImageStore` (chemin relatif,
+  redimensionnement 1280/JPEG 80), photos de progression et comparaison. Commit `f15bb78`.
+- Palier 10 (Sauvegarde et finition) : réalisé. RM-24 (export/import JSON transactionnel, `share_plus`
+  + `file_picker`), alarmes exactes avec repli, revue des états vides, animations du skin
+  (splash, panneaux, flash). Commits `2d2e287` et suivants.
 - Un commit Git par fonctionnalité terminée.
 
 ## Décisions

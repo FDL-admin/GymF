@@ -1,17 +1,33 @@
-# sport
+# GymF
 
-A new Flutter project.
+Application mobile de suivi de musculation, 100 % hors ligne, Android uniquement, à usage
+personnel. Un seul utilisateur par installation : pas de compte, pas de serveur, pas de
+synchronisation.
 
-## Getting Started
+Document de référence : `docs/Application mobile de suivi d'entraînement.md`.
+Gouvernance : `AGENTS.md`, `DESIGN.md` (tokens du skin), `DECISIONS.md` (journal des décisions).
 
-This project is a starting point for a Flutter application.
+## Fonctionnalités
 
-A few resources to get you started if this is your first Flutter project:
+- Bibliothèque d'exercices et de programmes (prédéfinis + personnels, textes et images).
+- Séance avec chrono de repos, pré-remplissage et récapitulatif.
+- Historique avec calendrier et records personnels.
+- Suivi : graphiques de progression et de volume, photos de progression.
+- Planning de salle, rappels locaux et série de jours.
+- Sauvegarde JSON (export/import) sans images ni éléments prédéfinis.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Développement
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter pub get                 # dépendances
+flutter analyze                 # lint / analyse statique
+flutter test                    # tests automatisés
+flutter run -d <device>         # exécution sur Android réel
+flutter build apk --debug       # build de test
+```
+
+## Stack
+
+Flutter (Dart) seul · `sqflite` + `path_provider` (SQL brut, migrations versionnées) ·
+`flutter_riverpod` · `flutter_local_notifications` + `timezone` + `flutter_timezone` ·
+`image_picker` · `fl_chart` · `share_plus` + `file_picker` · polices embarquées Rajdhani/Inter.
