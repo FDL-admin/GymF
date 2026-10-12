@@ -286,6 +286,10 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 
 ## Points ouverts
 
+- **Built-in Kotlin** : `flutter build` émet un avertissement sur `flutter_timezone`, qui applique
+  encore le Kotlin Gradle Plugin ; les futures versions de Flutter échoueront. À surveiller
+  (mise à jour du greffon ou migration) — ne bloque pas le build actuel.
+
 - **Polices exactes** : Rajdhani et Inter retenues (cf. décision ci-dessus).
 - Hypothèses retenues (section 12) sauf avis contraire : rappel d'abonnement mensuel, charges en
   kg uniquement, série de jours calculée sur le planning de salle, pas de « programme actif »,
