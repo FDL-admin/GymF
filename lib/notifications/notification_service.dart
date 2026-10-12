@@ -57,8 +57,17 @@ class NotificationService implements NotificationSink {
 
   @override
   Future<bool> requestPermission() async {
+    await _android?.requestExactAlarmsPermission();
     final granted = await _android?.requestNotificationsPermission();
     return granted ?? false;
+  }
+
+  Future<AndroidScheduleMode> _scheduleMode() async {
+    final canScheduleExact =
+        await _android?.canScheduleExactNotifications() ?? false;
+    return canScheduleExact
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
   }
 
   @override
@@ -89,7 +98,7 @@ class NotificationService implements NotificationSink {
       body,
       at,
       NotificationDetails(android: _remindersDetails),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: await _scheduleMode(),
     );
   }
 
@@ -150,7 +159,7 @@ class NotificationService implements NotificationSink {
       'Le chrono de repos est arrivé à zéro.',
       tz.TZDateTime.from(endAt, tz.local),
       NotificationDetails(android: _chronoDetails),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: await _scheduleMode(),
     );
   }
 

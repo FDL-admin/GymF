@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/data_revision.dart';
 import '../../data/database_provider.dart';
 import '../../data/history_repository.dart';
 import '../session/session_views.dart';
 
 final historyRepositoryProvider = Provider<HistoryRepository>((ref) {
+  ref.watch(dataRevisionProvider);
   return HistoryRepository(ref.watch(databaseProvider));
 });
 

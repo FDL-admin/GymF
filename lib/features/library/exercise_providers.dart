@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/data_revision.dart';
 import '../../data/database_provider.dart';
 import '../../data/exercise_repository.dart';
 import '../../data/models/exercise.dart';
 
 final exerciseRepositoryProvider = Provider<ExerciseRepository>((ref) {
+  ref.watch(dataRevisionProvider);
   return ExerciseRepository(ref.watch(databaseProvider));
 });
 

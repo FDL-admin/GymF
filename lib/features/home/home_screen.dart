@@ -74,7 +74,7 @@ class HomeScreen extends ConsumerWidget {
           icon: Icons.local_fire_department,
           title: 'Série en cours',
           value: streak == null
-              ? 'Aucun créneau planifié'
+              ? 'Définis ton planning dans Réglages'
               : '$streak jour${streak > 1 ? 's' : ''}',
         ),
         if (previous != null) ...[

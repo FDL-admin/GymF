@@ -235,6 +235,33 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 - **Raison** : les écrans de création sans image ne déclenchent aucun accès disque ; les tests
   qui n'exercent pas les images n'ont pas à surcharger le provider.
 
+### 2026-10-12 · Photos de progression et sauvegarde (palier 10)
+
+- **Question** : l'export/import RM-24 inclut-il les photos de progression ?
+- **Choix** : **non** — la table `progress_photo` est exclue du JSON (RM-24 « sans images »). Seules
+  les données personnelles non-image et l'historique sont exportés.
+- **Raison** : RM-24 est explicite ; `image_path` est `NOT NULL` et exporter un chemin sans le
+  fichier produirait des références cassées. Validé par l'utilisateur et par le test
+  `backup_repository_test.dart`.
+
+### 2026-10-12 · Dépendances export/import (palier 10)
+
+- **Question** : quels paquets pour partager et choisir un fichier JSON ?
+- **Choix** : `share_plus` (^13.3) et `file_picker` (^13.1), imposés par la section 3.
+- **Raison** : menu de partage système et sélection de fichier côté Android, sans réseau.
+
+### 2026-10-12 · Alarmes exactes pour les rappels (palier 10)
+
+- **Question** : la programmation inexacte retenue au palier 7 ne garantit pas la tolérance de
+  ± 2 min (RM-18). Comment la respecter ?
+- **Choix** : `SCHEDULE_EXACT_ALARM` déclaré dans le manifest ; programmation en
+  `exactAllowWhileIdle` lorsque `canScheduleExactNotifications()` l'autorise, repli automatique en
+  `inexactAllowWhileIdle` sinon. La demande d'autorisation d'alarme exacte est déclenchée à
+  l'activation du premier rappel (RM-20), aux côtés de la permission de notification. Cette
+  décision **remplace** le « mode inexact » du palier 7.
+- **Raison** : RM-18 impose ± 2 min ; la section 3 déclare la permission et prévoit un accès aux
+  réglages système. Le repli évite tout plantage si l'autorisation est refusée.
+
 ## Points ouverts
 
 - **Polices exactes** : Rajdhani et Inter retenues (cf. décision ci-dessus).

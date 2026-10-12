@@ -102,4 +102,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(Slider), findsOneWidget);
   });
+
+  testWidgets('la section sauvegarde propose export et import',
+      (tester) async {
+    await pumpSettings(tester);
+
+    expect(find.text('Exporter les données'), findsOneWidget);
+    expect(find.text('Importer des données'), findsOneWidget);
+    expect(find.text('À propos'), findsOneWidget);
+  });
 }

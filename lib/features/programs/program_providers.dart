@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/data_revision.dart';
 import '../../data/database_provider.dart';
 import '../../data/program_views.dart';
 import '../../data/program_repository.dart';
 import '../../data/models/program.dart';
 
 final programRepositoryProvider = Provider<ProgramRepository>((ref) {
+  ref.watch(dataRevisionProvider);
   return ProgramRepository(ref.watch(databaseProvider));
 });
 

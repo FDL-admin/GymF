@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../widgets/empty_state.dart';
 import '../programs/program_providers.dart';
 import '../settings/settings_providers.dart';
 import 'session_providers.dart';
@@ -86,7 +87,11 @@ class _ProgramPickerScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Choisir un programme')),
       body: programs.isEmpty
-          ? const Center(child: Text('Aucun programme.'))
+          ? const EmptyState(
+              icon: Icons.fitness_center,
+              message: 'Aucun programme.\nCrée un programme pour démarrer une '
+                  'séance type.',
+            )
           : ListView.builder(
               itemCount: programs.length,
               itemBuilder: (context, index) {
@@ -148,7 +153,11 @@ class _SessionTypePickerScreen extends ConsumerWidget {
       body: detail == null
           ? const Center(child: CircularProgressIndicator())
           : sessions.isEmpty
-              ? const Center(child: Text('Aucune séance type.'))
+              ? const EmptyState(
+                  icon: Icons.playlist_remove,
+                  message: 'Aucune séance type.\nAjoute une séance type à ce '
+                      'programme pour pouvoir la démarrer.',
+                )
               : ListView.builder(
                   itemCount: sessions.length,
                   itemBuilder: (context, index) {

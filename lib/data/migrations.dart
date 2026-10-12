@@ -1,6 +1,8 @@
 import 'package:sqflite/sqflite.dart';
 
-const int appSchemaVersion = 3;
+import '../domain/backup.dart';
+
+const int appSchemaVersion = currentSchemaVersion;
 
 const List<String> _v1Tables = [
   '''

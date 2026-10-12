@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/data_revision.dart';
+import '../../data/backup_repository.dart';
 import '../../data/database_provider.dart';
 import '../../data/models/subscription_reminder.dart';
 import '../../data/planning_repository.dart';
@@ -7,11 +9,20 @@ import '../../domain/planning.dart';
 import '../../domain/streak.dart';
 import '../../notifications/notification_service.dart';
 import '../../notifications/reminder_coordinator.dart';
+import '../../platform/backup_io.dart';
 import '../history/history_providers.dart';
 
 final planningRepositoryProvider = Provider<PlanningRepository>((ref) {
+  ref.watch(dataRevisionProvider);
   return PlanningRepository(ref.watch(databaseProvider));
 });
+
+final backupRepositoryProvider = Provider<BackupRepository>((ref) {
+  ref.watch(dataRevisionProvider);
+  return BackupRepository(ref.watch(databaseProvider));
+});
+
+final backupIOProvider = Provider<BackupIO>((ref) => const SystemBackupIO());
 
 final notificationSinkProvider = Provider<NotificationSink>((ref) {
   return NotificationService.instance;

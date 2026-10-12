@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/data_revision.dart';
 import '../../data/models/subscription_reminder.dart';
+import '../../domain/backup.dart';
 import '../../domain/planning.dart';
 import '../../platform/app_settings.dart';
 import '../../theme/spacing.dart';
@@ -86,6 +90,91 @@ class SettingsScreen extends ConsumerWidget {
     if (result == null) return;
     await ref.read(planningRepositoryProvider).setDefaultRestSeconds(result);
     ref.invalidate(defaultRestProvider);
+  }
+
+  Future<void> _export(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final json = jsonEncode(await ref.read(backupRepositoryProvider).export());
+      final now = DateTime.now();
+      final fileName = 'gymf-sauvegarde-${now.year}'
+          '${now.month.toString().padLeft(2, '0')}'
+          '${now.day.toString().padLeft(2, '0')}.json';
+      await ref.read(backupIOProvider).share(fileName, json);
+    } on Exception {
+      messenger.showSnackBar(
+        const SnackBar(content: Text("L'export a échoué.")),
+      );
+    }
+  }
+
+  Future<void> _import(BuildContext context, WidgetRef ref) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    final String? contents;
+    try {
+      contents = await ref.read(backupIOProvider).pickContents();
+    } on Exception {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Sélection du fichier impossible.')),
+      );
+      return;
+    }
+    if (contents == null) return;
+
+    final Map<String, Object?> parsed;
+    try {
+      final decoded = jsonDecode(contents);
+      if (decoded is! Map) throw const InvalidBackupException();
+      parsed = decoded.cast<String, Object?>();
+      BackupData.fromJson(parsed);
+    } on BackupException catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+      return;
+    } on FormatException {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Fichier de sauvegarde illisible.')),
+      );
+      return;
+    }
+
+    if (!context.mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Importer cette sauvegarde ?'),
+        content: const Text(
+          'Remplace toutes les données personnelles (exercices, programmes, '
+          'historique et réglages). Les éléments prédéfinis sont conservés.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Importer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await ref.read(backupRepositoryProvider).import(parsed);
+      ref.read(dataRevisionProvider.notifier).bump();
+      await ref.read(reminderCoordinatorProvider).resynchronize();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Sauvegarde importée.')),
+      );
+    } on BackupException catch (error) {
+      messenger.showSnackBar(SnackBar(content: Text(error.message)));
+    } on Exception {
+      messenger.showSnackBar(
+        const SnackBar(content: Text("L'import a échoué.")),
+      );
+    }
   }
 
   @override
@@ -184,6 +273,25 @@ class SettingsScreen extends ConsumerWidget {
           subtitle: const Text('Utilisée quand la série finit'),
           trailing: Text('$rest s'),
           onTap: () => _editDefaultRest(context, ref, rest),
+        ),
+        const _SectionHeader('Sauvegarde'),
+        ListTile(
+          leading: const Icon(Icons.ios_share_outlined),
+          title: const Text('Exporter les données'),
+          subtitle: const Text('Partage un fichier JSON de sauvegarde'),
+          onTap: () => _export(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.download_outlined),
+          title: const Text('Importer des données'),
+          subtitle: const Text('Remplace toutes les données personnelles'),
+          onTap: () => _import(context, ref),
+        ),
+        const _SectionHeader('À propos'),
+        const ListTile(
+          leading: Icon(Icons.info_outline),
+          title: Text('GymF'),
+          subtitle: Text('Suivi de musculation · 100 % hors ligne'),
         ),
         const SizedBox(height: AppSpacing.xl),
       ],
