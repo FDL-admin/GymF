@@ -5,6 +5,7 @@ import 'package:gymf/data/program_repository.dart';
 import 'package:gymf/data/seed_data.dart';
 import 'package:gymf/domain/program_drafts.dart';
 import 'package:gymf/features/session/session_repository.dart';
+import 'package:gymf/features/session/session_views.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -386,6 +387,126 @@ void main() {
       expect(data.session.status, WorkoutStatus.abandoned);
       expect(data.session.endedAt, isNotNull);
       expect(await repository.findInProgress(), isNull);
+    });
+  });
+
+  group('RM-15 — chrono de repos', () {
+    Future<SessionData> startedWithSet(int restSeconds) async {
+      final session = await repository.startFree();
+      final added =
+          await repository.addExercise(session.id, SeedExerciseIds.squat);
+      await db.update(
+        'workout_exercise',
+        {'rest_seconds': restSeconds},
+        where: 'id = ?',
+        whereArgs: [added.exercise.id],
+      );
+      await repository.updateSet(
+        added.sets.single.id,
+        reps: 8,
+        weightKg: 60,
+      );
+      return repository.loadSession(session.id);
+    }
+
+    test('valider une série démarre le chrono avec le repos de l\'exercice',
+        () async {
+      final data = await startedWithSet(120);
+      final set = data.exercises.single.sets.single;
+      await repository.updateSet(set.id, reps: 8, weightKg: 60);
+      final before = DateTime.now();
+      await repository.validateSet(set.id);
+
+      final session = await repository.getById(data.session.id);
+      expect(session.hasActiveRest, isTrue);
+      expect(session.restTotalSeconds, 120);
+      final endAt = DateTime.parse(session.restEndAt!);
+      final delta = endAt.difference(before.toUtc()).inSeconds;
+      expect(delta, inInclusiveRange(115, 121));
+    });
+
+    test('dé-valider une série arrête le chrono', () async {
+      final data = await startedWithSet(90);
+      final set = data.exercises.single.sets.single;
+      await repository.validateSet(set.id);
+      expect(
+        (await repository.getById(data.session.id)).hasActiveRest,
+        isTrue,
+      );
+
+      await repository.unvalidateSet(set.id);
+      final session = await repository.getById(data.session.id);
+      expect(session.restEndAt, isNull);
+      expect(session.restTotalSeconds, isNull);
+    });
+
+    test('ajuster et redémarrer modifient l\'heure de fin', () async {
+      final data = await startedWithSet(90);
+      final set = data.exercises.single.sets.single;
+      await repository.validateSet(set.id);
+      final initial =
+          DateTime.parse((await repository.getById(data.session.id)).restEndAt!);
+
+      await repository.adjustRest(data.session.id, 15);
+      final plusFifteen =
+          DateTime.parse((await repository.getById(data.session.id)).restEndAt!);
+      expect(
+        plusFifteen.difference(initial).inSeconds,
+        inInclusiveRange(14, 16),
+      );
+
+      await repository.adjustRest(data.session.id, -30);
+      final minusThirty =
+          DateTime.parse((await repository.getById(data.session.id)).restEndAt!);
+      expect(
+        plusFifteen.difference(minusThirty).inSeconds,
+        inInclusiveRange(29, 31),
+      );
+
+      await repository.restartRest(data.session.id);
+      final restarted = await repository.getById(data.session.id);
+      expect(restarted.restTotalSeconds, 90);
+      expect(
+        DateTime.parse(restarted.restEndAt!).isAfter(DateTime.now().toUtc()),
+        isTrue,
+      );
+    });
+
+    test('passer arrête le chrono', () async {
+      final data = await startedWithSet(90);
+      final set = data.exercises.single.sets.single;
+      await repository.validateSet(set.id);
+      await repository.clearRest(data.session.id);
+      final session = await repository.getById(data.session.id);
+      expect(session.restEndAt, isNull);
+      expect(session.restTotalSeconds, isNull);
+    });
+
+    test('terminer la séance annule le chrono', () async {
+      final data = await startedWithSet(90);
+      final set = data.exercises.single.sets.single;
+      await repository.updateSet(set.id, reps: 8, weightKg: 60);
+      await repository.validateSet(set.id);
+
+      await repository.finish(data.session.id);
+
+      final session = await repository.getById(data.session.id);
+      expect(session.status, WorkoutStatus.completed);
+      expect(session.restEndAt, isNull);
+      expect(session.restTotalSeconds, isNull);
+    });
+
+    test('abandonner la séance annule le chrono', () async {
+      final data = await startedWithSet(90);
+      final set = data.exercises.single.sets.single;
+      await repository.validateSet(set.id);
+
+      await repository.abandon(data.session.id);
+
+      final session = await repository.getById(data.session.id);
+      expect(session.status, WorkoutStatus.abandoned);
+      expect(session.restEndAt, isNull);
+      expect(session.restTotalSeconds, isNull);
     });
   });
 }

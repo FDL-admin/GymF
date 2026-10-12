@@ -28,6 +28,10 @@ final notificationSinkProvider = Provider<NotificationSink>((ref) {
   return NotificationService.instance;
 });
 
+final chronoNotifierProvider = Provider<ChronoNotifier>((ref) {
+  return NotificationService.instance;
+});
+
 final reminderCoordinatorProvider = Provider<ReminderCoordinator>((ref) {
   return ReminderCoordinator(
     planning: ref.watch(planningRepositoryProvider),

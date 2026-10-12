@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/exercise.dart';
+import '../../data/models/workout_session.dart';
 import '../../data/models/workout_set.dart';
+import '../../domain/rest_timer.dart';
 import '../../domain/session_rules.dart';
 import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
@@ -55,9 +57,29 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
         _data = data;
         _error = null;
       });
+      _syncChrono(data.session);
       await _refreshPrevious();
     } on ArgumentError catch (e) {
       if (mounted) setState(() => _error = e.message);
+    }
+  }
+
+  Future<void> _refreshSession() async {
+    final session =
+        await ref.read(sessionRepositoryProvider).getById(widget.sessionId);
+    if (!mounted) return;
+    setState(() {
+      _data = SessionData(session: session, exercises: _data!.exercises);
+    });
+    _syncChrono(session);
+  }
+
+  void _syncChrono(WorkoutSession session) {
+    final chrono = ref.read(chronoNotifierProvider);
+    if (session.hasActiveRest) {
+      chrono.scheduleEnd(DateTime.parse(session.restEndAt!));
+    } else {
+      chrono.cancel();
     }
   }
 
@@ -117,12 +139,14 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           ),
         );
       });
+      await _refreshSession();
     } else {
       try {
         final updated = await repository.validateSet(set.id);
         setState(() {
           _data = _replaceSet(set.id, updated);
         });
+        await _refreshSession();
       } on ArgumentError catch (e) {
         _showMessage(e.message!);
       }
@@ -231,6 +255,23 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     }
   }
 
+  Future<void> _adjustRest(int deltaSeconds) async {
+    await ref
+        .read(sessionRepositoryProvider)
+        .adjustRest(widget.sessionId, deltaSeconds);
+    await _refreshSession();
+  }
+
+  Future<void> _skipRest() async {
+    await ref.read(sessionRepositoryProvider).clearRest(widget.sessionId);
+    await _refreshSession();
+  }
+
+  Future<void> _restartRest() async {
+    await ref.read(sessionRepositoryProvider).restartRest(widget.sessionId);
+    await _refreshSession();
+  }
+
   Future<void> _finish() async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -256,6 +297,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
       final summary = await ref
           .read(sessionRepositoryProvider)
           .finish(widget.sessionId);
+      await ref.read(chronoNotifierProvider).cancel();
       await ref.read(reminderCoordinatorProvider).resynchronize();
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
@@ -289,6 +331,7 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
     );
     if (confirmed != true || !mounted) return;
     await ref.read(sessionRepositoryProvider).abandon(widget.sessionId);
+    await ref.read(chronoNotifierProvider).cancel();
     await ref.read(reminderCoordinatorProvider).resynchronize();
     if (!mounted) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
@@ -369,6 +412,20 @@ class _SessionScreenState extends ConsumerState<SessionScreen> {
           icon: const Icon(Icons.add),
           label: const Text('Ajouter un exercice'),
         ),
+        if (data.session.hasActiveRest) ...[
+          const SizedBox(height: AppSpacing.md),
+          _RestPanel(
+            remaining: RestTimer.remaining(
+              data.session.restEndAt,
+              DateTime.now(),
+            ),
+            totalSeconds: data.session.restTotalSeconds ?? 0,
+            onMinus: () => _adjustRest(-15),
+            onPlus: () => _adjustRest(15),
+            onSkip: _skipRest,
+            onRestart: _restartRest,
+          ),
+        ],
       ],
     );
   }
@@ -456,6 +513,83 @@ class _SessionHeaderCard extends StatelessWidget {
                   '$doneCount série${doneCount > 1 ? 's' : ''} validée'
                   '${doneCount > 1 ? 's' : ''}',
                   style: theme.textTheme.bodyMedium,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RestPanel extends StatelessWidget {
+  const _RestPanel({
+    required this.remaining,
+    required this.totalSeconds,
+    required this.onMinus,
+    required this.onPlus,
+    required this.onSkip,
+    required this.onRestart,
+  });
+
+  final Duration remaining;
+  final int totalSeconds;
+  final VoidCallback onMinus;
+  final VoidCallback onPlus;
+  final VoidCallback onSkip;
+  final VoidCallback onRestart;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final finished = remaining == Duration.zero;
+    final progress = totalSeconds <= 0
+        ? 0.0
+        : (remaining.inMilliseconds / (totalSeconds * 1000)).clamp(0.0, 1.0);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.timer_outlined,
+                  size: 18,
+                  color: finished ? AppColors.success : AppColors.textMuted,
+                ),
+                const SizedBox(width: 8),
+                Text('Chrono de repos', style: theme.textTheme.titleMedium),
+                const Spacer(),
+                Text(
+                  finished ? 'Repos terminé' : RestTimer.format(remaining),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: finished ? AppColors.success : AppColors.accentPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            LinearProgressIndicator(
+              value: progress,
+              minHeight: 4,
+              backgroundColor: AppColors.surfaceElevated,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton(onPressed: onMinus, child: const Text('−15 s')),
+                OutlinedButton(onPressed: onPlus, child: const Text('+15 s')),
+                OutlinedButton(onPressed: onSkip, child: const Text('Passer')),
+                TextButton(
+                  onPressed: onRestart,
+                  child: const Text('Redémarrer'),
                 ),
               ],
             ),

@@ -24,10 +24,19 @@ class SessionRepository {
   final Uuid _uuid = const Uuid();
   final StreamController<void> _changes =
       StreamController<void>.broadcast();
+  final StreamController<void> _durableChanges =
+      StreamController<void>.broadcast();
+
+  Stream<void> get durableChanges => _durableChanges.stream;
 
   Future<void> _publish() async {
     if (_changes.isClosed) return;
     _changes.add(null);
+  }
+
+  void _publishDurable() {
+    if (_durableChanges.isClosed) return;
+    _durableChanges.add(null);
   }
 
   Future<WorkoutSession?> findInProgress() async {
@@ -118,6 +127,7 @@ class SessionRepository {
     );
     await _db.insert(_Tables.session, session.toMap());
     await _publish();
+    _publishDurable();
     return session;
   }
 
@@ -198,6 +208,7 @@ class SessionRepository {
       }
     });
     await _publish();
+    _publishDurable();
     return session;
   }
 
@@ -556,12 +567,15 @@ class SessionRepository {
           'status': WorkoutStatus.completed,
           'ended_at': endedAt,
           'note': note,
+          'rest_end_at': null,
+          'rest_total_seconds': null,
         },
         where: 'id = ?',
         whereArgs: [sessionId],
       );
     });
     await _publish();
+    _publishDurable();
     return _buildSummary(await loadSession(sessionId));
   }
 
@@ -572,11 +586,14 @@ class SessionRepository {
       {
         'status': WorkoutStatus.abandoned,
         'ended_at': DateTime.now().toUtc().toIso8601String(),
+        'rest_end_at': null,
+        'rest_total_seconds': null,
       },
       where: 'id = ?',
       whereArgs: [sessionId],
     );
     await _publish();
+    _publishDurable();
   }
 
   Future<void> setNote(String sessionId, String? note) async {
@@ -586,6 +603,7 @@ class SessionRepository {
       where: 'id = ?',
       whereArgs: [sessionId],
     );
+    _publishDurable();
   }
 
   SessionSummary _buildSummary(SessionData data) {

@@ -24,7 +24,13 @@ abstract class NotificationSink {
   Future<bool> notificationsAuthorized();
 }
 
-class NotificationService implements NotificationSink {
+abstract class ChronoNotifier {
+  Future<void> scheduleEnd(DateTime endAt);
+
+  Future<void> cancel();
+}
+
+class NotificationService implements NotificationSink, ChronoNotifier {
   NotificationService._();
 
   static final NotificationService instance = NotificationService._();
@@ -79,7 +85,12 @@ class NotificationService implements NotificationSink {
   @override
   Future<void> cancelAll() async {
     if (!_initialized) return;
-    await _plugin.cancelAll();
+    final pending = await _plugin.pendingNotificationRequests();
+    for (final request in pending) {
+      if (request.id != chronoNotificationId) {
+        await _plugin.cancel(request.id);
+      }
+    }
   }
 
   @override
@@ -150,30 +161,24 @@ class NotificationService implements NotificationSink {
     );
   }
 
-  Future<void> scheduleChronoEnd(DateTime endAt) async {
+  @override
+  Future<void> scheduleEnd(DateTime endAt) async {
     if (!_initialized) return;
     await _plugin.cancel(chronoNotificationId);
+    final at = tz.TZDateTime.from(endAt, tz.local);
+    if (!at.isAfter(tz.TZDateTime.now(tz.local))) return;
     await _plugin.zonedSchedule(
       chronoNotificationId,
       'Repos terminé',
       'Le chrono de repos est arrivé à zéro.',
-      tz.TZDateTime.from(endAt, tz.local),
+      at,
       NotificationDetails(android: _chronoDetails),
       androidScheduleMode: await _scheduleMode(),
     );
   }
 
-  Future<void> showChronoNow() async {
-    if (!_initialized) return;
-    await _plugin.show(
-      chronoNotificationId,
-      'Repos terminé',
-      'Le chrono de repos est arrivé à zéro.',
-      NotificationDetails(android: _chronoDetails),
-    );
-  }
-
-  Future<void> cancelChrono() async {
+  @override
+  Future<void> cancel() async {
     if (!_initialized) return;
     await _plugin.cancel(chronoNotificationId);
   }
