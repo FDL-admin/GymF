@@ -262,6 +262,18 @@ Format : date · question · choix · raison. Toute dépendance ajoutée est jus
 - **Raison** : RM-18 impose ± 2 min ; la section 3 déclare la permission et prévoit un accès aux
   réglages système. Le repli évite tout plantage si l'autorisation est refusée.
 
+### 2026-10-12 · Animations du skin (palier 10)
+
+- **Question** : comment satisfaire la section 8 (animations ≤ 300 ms, écran de lancement,
+  panneaux, flash de fin de séance) sans alourdir les écrans ?
+- **Choix** : `SplashGate` (écran de lancement « DÉMARRAGE DU SYSTÈME » d'au plus 1,2 s, passable
+  au toucher) ; widget réutilisable `Appear` (fondu + 8 px, 300 ms) appliqué aux panneaux de
+  l'Accueil et au bouton de démarrage ; flash discret sur l'écran « Séance terminée ». Le tout
+  passe à durée nulle quand le système demande de réduire les animations
+  (`MediaQuery.disableAnimationsOf`).
+- **Raison** : la section 8 l'exige ; les autres écrans reposent sur des cartes métier non
+  considérées comme des « panneaux » du skin. Décision d'application sur les panneaux types.
+
 ## Points ouverts
 
 - **Polices exactes** : Rajdhani et Inter retenues (cf. décision ci-dessus).

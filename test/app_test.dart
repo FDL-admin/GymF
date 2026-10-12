@@ -4,8 +4,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gymf/app.dart';
 
 void main() {
+  testWidgets('l\'écran de lancement précède l\'application', (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: GymFApp()));
+
+    expect(find.text('GYMF'), findsOneWidget);
+    expect(find.byType(BottomNavigationBar), findsNothing);
+
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomNavigationBar), findsOneWidget);
+  });
+
   testWidgets('les 5 onglets sont présents', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: GymFApp()));
+    await tester.pumpAndSettle();
 
     for (final label in const [
       'Accueil',
@@ -27,6 +38,7 @@ void main() {
 
   testWidgets('la navigation change le titre affiché', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: GymFApp()));
+    await tester.pumpAndSettle();
 
     expect(find.widgetWithText(AppBar, 'Accueil'), findsOneWidget);
 

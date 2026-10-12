@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/planning.dart';
 import '../../theme/spacing.dart';
+import '../../widgets/appear.dart';
 import '../history/history_providers.dart';
 import '../session/session_providers.dart';
 import '../session/session_screen.dart';
@@ -61,38 +62,46 @@ class HomeScreen extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        _InfoCard(
-          icon: Icons.calendar_today,
-          title: 'Prochain créneau',
-          value: nextSlot == null
-              ? 'Aucun créneau planifié'
-              : '${Planning.weekdayLabel(nextSlot.weekday)} '
-                    '${_time(nextSlot)}',
+        Appear(
+          child: _InfoCard(
+            icon: Icons.calendar_today,
+            title: 'Prochain créneau',
+            value: nextSlot == null
+                ? 'Aucun créneau planifié'
+                : '${Planning.weekdayLabel(nextSlot.weekday)} '
+                      '${_time(nextSlot)}',
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
-        _InfoCard(
-          icon: Icons.local_fire_department,
-          title: 'Série en cours',
-          value: streak == null
-              ? 'Définis ton planning dans Réglages'
-              : '$streak jour${streak > 1 ? 's' : ''}',
+        Appear(
+          child: _InfoCard(
+            icon: Icons.local_fire_department,
+            title: 'Série en cours',
+            value: streak == null
+                ? 'Définis ton planning dans Réglages'
+                : '$streak jour${streak > 1 ? 's' : ''}',
+          ),
         ),
         if (previous != null) ...[
           const SizedBox(height: AppSpacing.md),
-          _InfoCard(
-            icon: Icons.history,
-            title: 'Dernière séance',
-            value:
-                '${previous.session.name} — '
-                '${previous.durationMinutes} min, '
-                '${previous.doneSets} série'
-                '${previous.doneSets > 1 ? 's' : ''}',
+          Appear(
+            child: _InfoCard(
+              icon: Icons.history,
+              title: 'Dernière séance',
+              value:
+                  '${previous.session.name} — '
+                  '${previous.durationMinutes} min, '
+                  '${previous.doneSets} série'
+                  '${previous.doneSets > 1 ? 's' : ''}',
+            ),
           ),
         ],
         const SizedBox(height: AppSpacing.xl),
-        FilledButton(
-          onPressed: () => showStartSessionSheet(context, ref),
-          child: const Text('Démarrer une séance'),
+        Appear(
+          child: FilledButton(
+            onPressed: () => showStartSessionSheet(context, ref),
+            child: const Text('Démarrer une séance'),
+          ),
         ),
       ],
     );

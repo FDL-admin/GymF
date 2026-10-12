@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../theme/colors.dart';
 import '../../theme/spacing.dart';
 import '../../widgets/record_badge.dart';
 import '../history/history_providers.dart';
@@ -56,73 +57,79 @@ class _WorkoutSummaryScreenState extends ConsumerState<WorkoutSummaryScreen> {
         '${started.year}';
     return Scaffold(
       appBar: AppBar(title: const Text('Séance terminée')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+      body: Stack(
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(summary.name,
-                      style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 4),
-                  Text(dateLabel),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _Metric(icon: Icons.timer_outlined,
-                          label: 'Durée',
-                          value: '${summary.durationMinutes} min'),
-                      _Metric(icon: Icons.check_circle_outline,
-                          label: 'Séries',
-                          value: '${summary.doneSets}'),
-                      _Metric(icon: Icons.fitness_center,
-                          label: 'Volume',
-                          value: '${_formatVolume(summary.volume)} kg'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text('Exercices', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
-          if (summary.exercises.isEmpty)
-            const Text('Aucun exercice conservé.')
-          else
-            for (final exercise in summary.exercises)
+          ListView(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            children: [
               Card(
-                child: ListTile(
-                  title: Row(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: Text(exercise.name)),
-                      if (recordIds.contains(exercise.exerciseId))
-                        const RecordBadge(),
+                      Text(summary.name,
+                          style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 4),
+                      Text(dateLabel),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          _Metric(icon: Icons.timer_outlined,
+                              label: 'Durée',
+                              value: '${summary.durationMinutes} min'),
+                          _Metric(icon: Icons.check_circle_outline,
+                              label: 'Séries',
+                              value: '${summary.doneSets}'),
+                          _Metric(icon: Icons.fitness_center,
+                              label: 'Volume',
+                              value: '${_formatVolume(summary.volume)} kg'),
+                        ],
+                      ),
                     ],
-                  ),
-                  subtitle: Text(
-                    '${exercise.doneSets} série'
-                    '${exercise.doneSets > 1 ? 's' : ''} · '
-                    '${_formatVolume(exercise.volume)} kg',
-                  ),
-                  trailing: Text(
-                    'max ${_formatVolume(exercise.maxLoad)} kg',
-                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
               ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _noteController,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Note (facultative)',
-              border: OutlineInputBorder(),
-            ),
+              const SizedBox(height: AppSpacing.md),
+              Text('Exercices',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 4),
+              if (summary.exercises.isEmpty)
+                const Text('Aucun exercice conservé.')
+              else
+                for (final exercise in summary.exercises)
+                  Card(
+                    child: ListTile(
+                      title: Row(
+                        children: [
+                          Expanded(child: Text(exercise.name)),
+                          if (recordIds.contains(exercise.exerciseId))
+                            const RecordBadge(),
+                        ],
+                      ),
+                      subtitle: Text(
+                        '${exercise.doneSets} série'
+                        '${exercise.doneSets > 1 ? 's' : ''} · '
+                        '${_formatVolume(exercise.volume)} kg',
+                      ),
+                      trailing: Text(
+                        'max ${_formatVolume(exercise.maxLoad)} kg',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: _noteController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Note (facultative)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
           ),
+          const Positioned.fill(child: _FinishFlash()),
         ],
       ),
       bottomNavigationBar: SafeArea(
@@ -146,6 +153,58 @@ class _WorkoutSummaryScreenState extends ConsumerState<WorkoutSummaryScreen> {
   String _formatVolume(double value) {
     if (value == value.roundToDouble()) return value.toInt().toString();
     return value.toStringAsFixed(1);
+  }
+}
+
+class _FinishFlash extends StatefulWidget {
+  const _FinishFlash();
+
+  @override
+  State<_FinishFlash> createState() => _FinishFlashState();
+}
+
+class _FinishFlashState extends State<_FinishFlash>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) return;
+    if (_controller.status == AnimationStatus.dismissed) {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return const SizedBox.shrink();
+    }
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) => Opacity(
+          opacity: (1 - _controller.value) * 0.35,
+          child: const ColoredBox(color: AppColors.accentPrimary),
+        ),
+      ),
+    );
   }
 }
 

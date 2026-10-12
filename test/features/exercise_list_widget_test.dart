@@ -47,6 +47,7 @@ Future<void> _pumpLibrary(WidgetTester tester,
       child: const GymFApp(),
     ),
   );
+  await tester.pumpAndSettle();
   await tester.tap(
     find.descendant(
       of: find.byType(BottomNavigationBar),
